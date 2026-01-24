@@ -24,6 +24,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { useCourses } from '@/hooks/useCourses';
+import { useTeachers } from '@/hooks/useTeachers';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserRole } from '@/hooks/useUserRole';
 import {
@@ -56,6 +57,7 @@ export default function SecureAttendance() {
   const { user } = useAuth();
   const { isAdmin, isTeacher, isLoading: roleLoading } = useUserRole();
   const { courses, loading: coursesLoading } = useCourses();
+  const { teachers } = useTeachers();
   const { locations } = useClassroomLocations();
   const { sessions, createSession, endSession, isLoading: sessionsLoading } = useSecureAttendanceSessions();
 
@@ -69,6 +71,7 @@ export default function SecureAttendance() {
   const [timeWindow, setTimeWindow] = useState('15');
   const [requireSelfie, setRequireSelfie] = useState(false);
   const [requireGps, setRequireGps] = useState(true);
+  const [selectedTeacherId, setSelectedTeacherId] = useState('');
 
   // Get teacher ID
   useEffect(() => {
@@ -103,11 +106,14 @@ export default function SecureAttendance() {
   const { data: attendanceRecords, isLoading: recordsLoading } = useSessionAttendanceRecords(activeSession);
 
   const handleStartSession = async () => {
-    if (!teacherId || !selectedCourse) return;
+    // For admin, use selectedTeacherId; for teacher, use their own teacherId
+    const sessionTeacherId = isAdmin && !teacherId ? selectedTeacherId : teacherId;
+    
+    if (!sessionTeacherId || !selectedCourse) return;
 
     await createSession.mutateAsync({
       course_id: selectedCourse,
-      teacher_id: teacherId,
+      teacher_id: sessionTeacherId,
       classroom_location_id: selectedLocation === 'none' || !selectedLocation ? undefined : selectedLocation,
       time_window_minutes: parseInt(timeWindow),
       require_selfie: requireSelfie,
@@ -120,6 +126,7 @@ export default function SecureAttendance() {
     setTimeWindow('15');
     setRequireSelfie(false);
     setRequireGps(true);
+    setSelectedTeacherId('');
   };
 
   const handleEndSession = async () => {
@@ -411,6 +418,25 @@ export default function SecureAttendance() {
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="grid gap-4 md:grid-cols-2">
+                  {/* Teacher selection for admins */}
+                  {isAdmin && !teacherId && (
+                    <div className="space-y-2">
+                      <Label>Teacher *</Label>
+                      <Select value={selectedTeacherId} onValueChange={setSelectedTeacherId}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a teacher" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {teachers?.filter(t => t.status === 'active').map((teacher) => (
+                            <SelectItem key={teacher.id} value={teacher.id}>
+                              {teacher.first_name} {teacher.last_name} ({teacher.teacher_id})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+
                   <div className="space-y-2">
                     <Label>Course *</Label>
                     <Select value={selectedCourse} onValueChange={setSelectedCourse}>
@@ -495,7 +521,7 @@ export default function SecureAttendance() {
                   </Button>
                   <Button
                     onClick={handleStartSession}
-                    disabled={!selectedCourse || createSession.isPending}
+                    disabled={!selectedCourse || (isAdmin && !teacherId && !selectedTeacherId) || createSession.isPending}
                   >
                     <Play className="mr-2 h-4 w-4" />
                     {createSession.isPending ? 'Starting...' : 'Start Session'}
