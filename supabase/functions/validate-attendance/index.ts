@@ -94,12 +94,12 @@ serve(async (req) => {
     if (action === 'generate_qr') {
       const { session_id } = body;
 
-      // Verify teacher owns this session
+      // Verify teacher owns this session OR user is admin
       const { data: session, error: sessionError } = await serviceClient
         .from('secure_attendance_sessions')
         .select(`
           *,
-          teachers!inner(user_id),
+          teachers(user_id),
           classroom_locations(latitude, longitude, radius_meters)
         `)
         .eq('id', session_id)
@@ -112,7 +112,17 @@ serve(async (req) => {
         );
       }
 
-      if (session.teachers.user_id !== userId) {
+      // Check if user is admin
+      const { data: userRole } = await serviceClient
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId)
+        .single();
+      
+      const isAdmin = userRole?.role === 'admin';
+      const isSessionTeacher = session.teachers?.user_id === userId;
+
+      if (!isAdmin && !isSessionTeacher) {
         return new Response(
           JSON.stringify({ error: 'Not authorized', code: 'NOT_AUTHORIZED' }),
           { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
