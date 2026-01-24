@@ -349,3 +349,98 @@ export function useSendChatMessage() {
     },
   });
 }
+
+export interface InterviewSession {
+  id: string;
+  live_session_id: string;
+  candidate_id: string | null;
+  candidate_name: string | null;
+  candidate_email: string | null;
+  interview_type: string | null;
+  rating: number | null;
+  feedback: string | null;
+  interview_notes: string | null;
+  secure_link: string | null;
+  link_expires_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export function useInterviewSession(liveSessionId: string | undefined) {
+  const { data: interviewSession, isLoading, refetch } = useQuery({
+    queryKey: ['interview-session', liveSessionId],
+    queryFn: async () => {
+      if (!liveSessionId) return null;
+
+      const { data, error } = await supabase
+        .from('interview_sessions')
+        .select('*')
+        .eq('live_session_id', liveSessionId)
+        .maybeSingle();
+
+      if (error) throw error;
+      return data as InterviewSession | null;
+    },
+    enabled: !!liveSessionId,
+  });
+
+  return { interviewSession, isLoading, refetch };
+}
+
+export function useSubmitInterviewFeedback() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      sessionId,
+      rating,
+      feedback,
+      interviewNotes,
+    }: {
+      sessionId: string;
+      rating: number;
+      feedback: string;
+      interviewNotes?: string;
+    }) => {
+      // First check if an interview session exists for this live session
+      const { data: existingSession, error: fetchError } = await supabase
+        .from('interview_sessions')
+        .select('id')
+        .eq('live_session_id', sessionId)
+        .maybeSingle();
+
+      if (fetchError) throw fetchError;
+
+      if (existingSession) {
+        // Update existing interview session
+        const { error } = await supabase
+          .from('interview_sessions')
+          .update({
+            rating,
+            feedback,
+            interview_notes: interviewNotes || null,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', existingSession.id);
+
+        if (error) throw error;
+      } else {
+        // Create new interview session record
+        const { error } = await supabase
+          .from('interview_sessions')
+          .insert({
+            live_session_id: sessionId,
+            rating,
+            feedback,
+            interview_notes: interviewNotes || null,
+          });
+
+        if (error) throw error;
+      }
+    },
+    onSuccess: (_, { sessionId }) => {
+      queryClient.invalidateQueries({ queryKey: ['interview-session', sessionId] });
+      queryClient.invalidateQueries({ queryKey: ['live-sessions'] });
+    },
+  });
+}
