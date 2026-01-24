@@ -65,7 +65,7 @@ export function CourseFormDialog({
       description: '',
       credits: 3,
       department: '',
-      teacher_id: '',
+      teacher_id: 'none',
       max_students: 50,
       status: 'active',
     },
@@ -79,7 +79,7 @@ export function CourseFormDialog({
         description: course.description || '',
         credits: course.credits,
         department: course.department || '',
-        teacher_id: course.teacher_id || '',
+        teacher_id: course.teacher_id || 'none',
         max_students: course.max_students || 50,
         status: course.status,
       });
@@ -90,7 +90,7 @@ export function CourseFormDialog({
         description: '',
         credits: 3,
         department: '',
-        teacher_id: '',
+        teacher_id: 'none',
         max_students: 50,
         status: 'active',
       });
@@ -102,7 +102,7 @@ export function CourseFormDialog({
       ...data,
       description: data.description || null,
       department: data.department || null,
-      teacher_id: data.teacher_id || null,
+      teacher_id: data.teacher_id === 'none' || !data.teacher_id ? null : data.teacher_id,
       max_students: data.max_students || null,
     });
   };
@@ -172,14 +172,14 @@ export function CourseFormDialog({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Instructor</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value || ''}>
+                    <Select onValueChange={field.onChange} value={field.value || 'none'}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select instructor" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">No instructor</SelectItem>
+                        <SelectItem value="none">No instructor</SelectItem>
                         {teachers.map((teacher) => (
                           <SelectItem key={teacher.id} value={teacher.id}>
                             {teacher.first_name} {teacher.last_name}
