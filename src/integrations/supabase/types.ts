@@ -154,6 +154,7 @@ export type Database = {
           status: string
           student_id: string
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           address?: string | null
@@ -169,6 +170,7 @@ export type Database = {
           status?: string
           student_id: string
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           address?: string | null
@@ -184,6 +186,7 @@ export type Database = {
           status?: string
           student_id?: string
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -201,6 +204,7 @@ export type Database = {
           status: string
           teacher_id: string
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           created_at?: string
@@ -215,6 +219,7 @@ export type Database = {
           status?: string
           teacher_id: string
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           created_at?: string
@@ -229,6 +234,7 @@ export type Database = {
           status?: string
           teacher_id?: string
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -255,6 +261,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_user_role: {
+        Args: { _user_id: string }
+        Returns: Database["public"]["Enums"]["app_role"]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -264,7 +274,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "user"
+      app_role: "admin" | "user" | "teacher" | "student"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -392,7 +402,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "user"],
+      app_role: ["admin", "user", "teacher", "student"],
     },
   },
 } as const

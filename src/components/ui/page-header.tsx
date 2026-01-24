@@ -4,9 +4,10 @@ interface PageHeaderProps {
   title: string;
   description?: string;
   actions?: ReactNode;
+  children?: ReactNode;
 }
 
-export function PageHeader({ title, description, actions }: PageHeaderProps) {
+export function PageHeader({ title, description, actions, children }: PageHeaderProps) {
   return (
     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
       <div className="animate-slide-in-left">
@@ -15,7 +16,12 @@ export function PageHeader({ title, description, actions }: PageHeaderProps) {
           <p className="mt-1 text-muted-foreground">{description}</p>
         )}
       </div>
-      {actions && <div className="animate-fade-in">{actions}</div>}
+      {(actions || children) && (
+        <div className="animate-fade-in flex items-center gap-4">
+          {children}
+          {actions}
+        </div>
+      )}
     </div>
   );
 }

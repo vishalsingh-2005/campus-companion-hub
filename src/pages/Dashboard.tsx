@@ -1,10 +1,17 @@
 import { useEffect, useState } from 'react';
+import { Navigate } from 'react-router-dom';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { PageHeader } from '@/components/ui/page-header';
 import { StatCard } from '@/components/ui/stat-card';
 import { supabase } from '@/integrations/supabase/client';
-import { GraduationCap, Users, BookOpen, ClipboardList, TrendingUp } from 'lucide-react';
+import { useUserRole } from '@/hooks/useUserRole';
+import { GraduationCap, Users, BookOpen, ClipboardList, TrendingUp, Shield } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Loader2 } from 'lucide-react';
+
+// Import role-specific dashboard content
+import StudentDashboard from './student/StudentDashboard';
+import TeacherDashboard from './teacher/TeacherDashboard';
 
 interface DashboardStats {
   totalStudents: number;
@@ -16,6 +23,7 @@ interface DashboardStats {
 }
 
 export default function Dashboard() {
+  const { role, isLoading: roleLoading, isAdmin, isTeacher, isStudent } = useUserRole();
   const [stats, setStats] = useState<DashboardStats>({
     totalStudents: 0,
     totalTeachers: 0,
@@ -30,6 +38,12 @@ export default function Dashboard() {
 
   useEffect(() => {
     async function fetchStats() {
+      // Only fetch stats for admin
+      if (!isAdmin) {
+        setLoading(false);
+        return;
+      }
+
       try {
         const [
           { count: totalStudents },
@@ -68,15 +82,50 @@ export default function Dashboard() {
       }
     }
 
-    fetchStats();
-  }, []);
+    if (!roleLoading) {
+      fetchStats();
+    }
+  }, [roleLoading, isAdmin]);
 
+  if (roleLoading) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  // Render role-specific dashboard
+  if (isStudent) {
+    return (
+      <DashboardLayout>
+        <StudentDashboard />
+      </DashboardLayout>
+    );
+  }
+
+  if (isTeacher) {
+    return (
+      <DashboardLayout>
+        <TeacherDashboard />
+      </DashboardLayout>
+    );
+  }
+
+  // Admin dashboard (default for admin role and fallback)
   return (
     <DashboardLayout>
       <PageHeader
-        title="Dashboard"
+        title="Administrator Dashboard"
         description="Welcome to the College Management System"
-      />
+      >
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium">
+          <Shield className="h-4 w-4" />
+          Full Access
+        </div>
+      </PageHeader>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <StatCard
@@ -84,28 +133,27 @@ export default function Dashboard() {
           value={loading ? '...' : stats.totalStudents}
           subtitle={`${stats.activeStudents} active`}
           icon={GraduationCap}
-          iconClassName="bg-info/10 text-info"
+          variant="info"
         />
         <StatCard
           title="Total Teachers"
           value={loading ? '...' : stats.totalTeachers}
           subtitle={`${stats.activeTeachers} active`}
           icon={Users}
-          iconClassName="bg-success/10 text-success"
+          variant="success"
         />
         <StatCard
           title="Total Courses"
           value={loading ? '...' : stats.totalCourses}
           subtitle="Across all departments"
           icon={BookOpen}
-          iconClassName="bg-warning/10 text-warning"
+          variant="warning"
         />
         <StatCard
           title="Enrollments"
           value={loading ? '...' : stats.totalEnrollments}
           subtitle="Course registrations"
           icon={ClipboardList}
-          iconClassName="bg-primary/10 text-primary"
         />
       </div>
 

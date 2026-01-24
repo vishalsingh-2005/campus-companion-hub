@@ -1,33 +1,18 @@
 import { useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { GraduationCap, Loader2, Mail, Lock, User } from 'lucide-react';
-import { toast } from 'sonner';
-import { z } from 'zod';
+import { RoleCard } from '@/components/auth/RoleCard';
+import { RoleLoginForm } from '@/components/auth/RoleLoginForm';
+import { StudentIllustration } from '@/components/auth/illustrations/StudentIllustration';
+import { TeacherIllustration } from '@/components/auth/illustrations/TeacherIllustration';
+import { AdminIllustration } from '@/components/auth/illustrations/AdminIllustration';
+import { GraduationCap, BookOpen, Shield, Loader2 } from 'lucide-react';
 
-const loginSchema = z.object({
-  email: z.string().email('Invalid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
-});
-
-const signupSchema = loginSchema.extend({
-  fullName: z.string().min(2, 'Name must be at least 2 characters'),
-});
+type SelectedRole = 'admin' | 'teacher' | 'student' | null;
 
 export default function Auth() {
-  const { user, signIn, signUp, loading } = useAuth();
-  const [isLogin, setIsLogin] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-    fullName: '',
-  });
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const { user, loading } = useAuth();
+  const [selectedRole, setSelectedRole] = useState<SelectedRole>(null);
 
   if (loading) {
     return (
@@ -41,183 +26,109 @@ export default function Auth() {
     return <Navigate to="/dashboard" replace />;
   }
 
-  const validateForm = () => {
-    try {
-      if (isLogin) {
-        loginSchema.parse(formData);
-      } else {
-        signupSchema.parse(formData);
-      }
-      setErrors({});
-      return true;
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        const newErrors: Record<string, string> = {};
-        error.errors.forEach((err) => {
-          if (err.path[0]) {
-            newErrors[err.path[0] as string] = err.message;
-          }
-        });
-        setErrors(newErrors);
-      }
-      return false;
-    }
-  };
+  // Show role-specific login form
+  if (selectedRole === 'student') {
+    return (
+      <RoleLoginForm
+        role="student"
+        onBack={() => setSelectedRole(null)}
+        illustration={<StudentIllustration />}
+        gradient="bg-gradient-to-br from-emerald-500 to-teal-600"
+        title="Student Portal"
+        subtitle="Access your courses, grades, and academic information"
+      />
+    );
+  }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!validateForm()) return;
+  if (selectedRole === 'teacher') {
+    return (
+      <RoleLoginForm
+        role="teacher"
+        onBack={() => setSelectedRole(null)}
+        illustration={<TeacherIllustration />}
+        gradient="bg-gradient-to-br from-blue-500 to-indigo-600"
+        title="Teacher Portal"
+        subtitle="Manage your classes and view student information"
+      />
+    );
+  }
 
-    setIsSubmitting(true);
+  if (selectedRole === 'admin') {
+    return (
+      <RoleLoginForm
+        role="admin"
+        onBack={() => setSelectedRole(null)}
+        illustration={<AdminIllustration />}
+        gradient="bg-gradient-to-br from-slate-700 to-slate-900"
+        title="Administrator Portal"
+        subtitle="Full access to manage the college system"
+      />
+    );
+  }
 
-    try {
-      if (isLogin) {
-        const { error } = await signIn(formData.email, formData.password);
-        if (error) {
-          if (error.message.includes('Invalid login credentials')) {
-            toast.error('Invalid email or password');
-          } else {
-            toast.error(error.message);
-          }
-        } else {
-          toast.success('Welcome back!');
-        }
-      } else {
-        const { error } = await signUp(formData.email, formData.password, formData.fullName);
-        if (error) {
-          if (error.message.includes('already registered')) {
-            toast.error('This email is already registered');
-          } else {
-            toast.error(error.message);
-          }
-        } else {
-          toast.success('Account created successfully!');
-        }
-      }
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
+  // Role selection screen
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4 relative overflow-hidden">
+      {/* Background decorations */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 rounded-full bg-primary/10 blur-3xl" />
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 rounded-full bg-primary/5 blur-3xl" />
+        <div className="absolute -top-40 -right-40 w-96 h-96 rounded-full bg-primary/5 blur-3xl animate-pulse" />
+        <div className="absolute -bottom-40 -left-40 w-96 h-96 rounded-full bg-primary/10 blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-primary/5 blur-3xl" />
       </div>
 
-      <Card className="w-full max-w-md relative animate-scale-in shadow-xl border-0 bg-card/95 backdrop-blur">
-        <CardHeader className="text-center pb-2">
-          <div className="flex justify-center mb-4">
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl gradient-primary shadow-glow">
-              <GraduationCap className="h-8 w-8 text-primary-foreground" />
+      {/* Content */}
+      <div className="relative z-10 w-full max-w-4xl">
+        {/* Header */}
+        <div className="text-center mb-12 animate-fade-in">
+          <div className="flex justify-center mb-6">
+            <div className="flex h-20 w-20 items-center justify-center rounded-2xl gradient-primary shadow-glow">
+              <GraduationCap className="h-10 w-10 text-white" />
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold">
-            {isLogin ? 'Welcome Back' : 'Create Account'}
-          </CardTitle>
-          <CardDescription>
-            {isLogin
-              ? 'Sign in to your admin account'
-              : 'Sign up for a new admin account'}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {!isLogin && (
-              <div className="space-y-2">
-                <Label htmlFor="fullName">Full Name</Label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="fullName"
-                    type="text"
-                    placeholder="John Doe"
-                    value={formData.fullName}
-                    onChange={(e) =>
-                      setFormData({ ...formData, fullName: e.target.value })
-                    }
-                    className="pl-9"
-                  />
-                </div>
-                {errors.fullName && (
-                  <p className="text-sm text-destructive">{errors.fullName}</p>
-                )}
-              </div>
-            )}
+          <h1 className="text-4xl font-bold text-foreground mb-3">
+            College Management System
+          </h1>
+          <p className="text-lg text-muted-foreground max-w-md mx-auto">
+            Select your role to access the portal
+          </p>
+        </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="admin@college.edu"
-                  value={formData.email}
-                  onChange={(e) =>
-                    setFormData({ ...formData, email: e.target.value })
-                  }
-                  className="pl-9"
-                />
-              </div>
-              {errors.email && (
-                <p className="text-sm text-destructive">{errors.email}</p>
-              )}
-            </div>
+        {/* Role cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <RoleCard
+            title="Student"
+            description="View your courses, grades, and attendance"
+            icon={GraduationCap}
+            gradient="bg-gradient-to-br from-emerald-500 to-teal-600"
+            iconBg="bg-gradient-to-br from-emerald-500 to-teal-600"
+            onClick={() => setSelectedRole('student')}
+            delay={0}
+          />
+          <RoleCard
+            title="Teacher"
+            description="Manage classes and view student data"
+            icon={BookOpen}
+            gradient="bg-gradient-to-br from-blue-500 to-indigo-600"
+            iconBg="bg-gradient-to-br from-blue-500 to-indigo-600"
+            onClick={() => setSelectedRole('teacher')}
+            delay={100}
+          />
+          <RoleCard
+            title="Administrator"
+            description="Full system control and management"
+            icon={Shield}
+            gradient="bg-gradient-to-br from-slate-700 to-slate-900"
+            iconBg="bg-gradient-to-br from-slate-700 to-slate-900"
+            onClick={() => setSelectedRole('admin')}
+            delay={200}
+          />
+        </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={formData.password}
-                  onChange={(e) =>
-                    setFormData({ ...formData, password: e.target.value })
-                  }
-                  className="pl-9"
-                />
-              </div>
-              {errors.password && (
-                <p className="text-sm text-destructive">{errors.password}</p>
-              )}
-            </div>
-
-            <Button
-              type="submit"
-              className="w-full h-11 text-base font-medium"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? (
-                <Loader2 className="h-5 w-5 animate-spin" />
-              ) : isLogin ? (
-                'Sign In'
-              ) : (
-                'Create Account'
-              )}
-            </Button>
-          </form>
-
-          <div className="mt-6 text-center">
-            <button
-              type="button"
-              onClick={() => {
-                setIsLogin(!isLogin);
-                setErrors({});
-              }}
-              className="text-sm text-muted-foreground hover:text-primary transition-colors"
-            >
-              {isLogin
-                ? "Don't have an account? Sign up"
-                : 'Already have an account? Sign in'}
-            </button>
-          </div>
-        </CardContent>
-      </Card>
+        {/* Footer */}
+        <p className="text-center text-sm text-muted-foreground mt-12 animate-fade-in" style={{ animationDelay: '400ms' }}>
+          Need help? Contact your administrator for account access.
+        </p>
+      </div>
     </div>
   );
 }
