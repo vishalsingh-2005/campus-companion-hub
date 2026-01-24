@@ -4,13 +4,7 @@ import {
   LiveKitRoom,
   VideoConference,
   RoomAudioRenderer,
-  ControlBar,
-  useTracks,
-  GridLayout,
-  ParticipantTile,
-  Chat,
 } from '@livekit/components-react';
-import '@livekit/components-styles';
 import { Track } from 'livekit-client';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
