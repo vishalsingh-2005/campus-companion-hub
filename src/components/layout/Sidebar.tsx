@@ -9,23 +9,94 @@ import {
   LogOut,
   Menu,
   X,
+  Shield,
+  User,
 } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { UserPlus } from 'lucide-react';
+import { useUserRole } from '@/hooks/useUserRole';
 import { Button } from '@/components/ui/button';
 
-const navigation = [
+interface NavItem {
+  name: string;
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+  roles?: ('admin' | 'teacher' | 'student')[];
+}
+
+const adminNavigation: NavItem[] = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'Students', href: '/students', icon: GraduationCap },
-  { name: 'Teachers', href: '/teachers', icon: Users },
-  { name: 'Courses', href: '/courses', icon: BookOpen },
-  { name: 'Enrollments', href: '/enrollments', icon: ClipboardList },
+  { name: 'Students', href: '/students', icon: GraduationCap, roles: ['admin'] },
+  { name: 'Teachers', href: '/teachers', icon: Users, roles: ['admin'] },
+  { name: 'Courses', href: '/courses', icon: BookOpen, roles: ['admin'] },
+  { name: 'Enrollments', href: '/enrollments', icon: ClipboardList, roles: ['admin'] },
+  { name: 'User Accounts', href: '/admin/users', icon: UserPlus, roles: ['admin'] },
+];
+
+const teacherNavigation: NavItem[] = [
+  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+];
+
+const studentNavigation: NavItem[] = [
+  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
 ];
 
 export function Sidebar() {
   const location = useLocation();
   const { signOut, user } = useAuth();
+  const { role, isAdmin, isTeacher, isStudent } = useUserRole();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Get navigation based on role
+  const getNavigation = () => {
+    if (isAdmin) return adminNavigation;
+    if (isTeacher) return teacherNavigation;
+    if (isStudent) return studentNavigation;
+    return [{ name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard }];
+  };
+
+  const navigation = getNavigation();
+
+  const getRoleBadge = () => {
+    if (isAdmin) {
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-primary/20 text-primary">
+          <Shield className="h-3 w-3" />
+          Admin
+        </span>
+      );
+    }
+    if (isTeacher) {
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-500/20 text-blue-400">
+          <BookOpen className="h-3 w-3" />
+          Teacher
+        </span>
+      );
+    }
+    if (isStudent) {
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-500/20 text-emerald-400">
+          <GraduationCap className="h-3 w-3" />
+          Student
+        </span>
+      );
+    }
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground">
+        <User className="h-3 w-3" />
+        User
+      </span>
+    );
+  };
+
+  const getRoleLabel = () => {
+    if (isAdmin) return 'Administrator';
+    if (isTeacher) return 'Teacher';
+    if (isStudent) return 'Student';
+    return 'User';
+  };
 
   const NavContent = () => (
     <>
@@ -67,9 +138,12 @@ export function Sidebar() {
             {user?.email?.charAt(0).toUpperCase()}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-sidebar-foreground truncate">
-              Admin
-            </p>
+            <div className="flex items-center gap-2">
+              <p className="text-sm font-medium text-sidebar-foreground truncate">
+                {getRoleLabel()}
+              </p>
+              {getRoleBadge()}
+            </div>
             <p className="text-xs text-sidebar-foreground/60 truncate">
               {user?.email}
             </p>

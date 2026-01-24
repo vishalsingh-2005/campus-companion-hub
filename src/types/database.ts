@@ -10,6 +10,7 @@ export interface Student {
   address: string | null;
   enrollment_date: string;
   status: string;
+  user_id: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -25,6 +26,7 @@ export interface Teacher {
   qualification: string | null;
   hire_date: string;
   status: string;
+  user_id: string | null;
   created_at: string;
   updated_at: string;
 }
