@@ -216,12 +216,12 @@ export default function MyAttendance() {
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
               <Label>Course</Label>
-              <Select value={selectedCourse} onValueChange={setSelectedCourse}>
+              <Select value={selectedCourse || 'all'} onValueChange={(v) => setSelectedCourse(v === 'all' ? '' : v)}>
                 <SelectTrigger>
                   <SelectValue placeholder="All courses" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Courses</SelectItem>
+                  <SelectItem value="all">All Courses</SelectItem>
                   {courses.map((course) => (
                     <SelectItem key={course.course_code} value={course.course_code}>
                       {course.course_code} - {course.course_name}
