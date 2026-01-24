@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { createRemoteJWKSet, jwtVerify } from "https://esm.sh/jose@5.9.6";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -21,7 +22,7 @@ serve(async (req: Request): Promise<Response> => {
 
   try {
     // Get the authorization header
-    const authHeader = req.headers.get("Authorization");
+    const authHeader = req.headers.get("Authorization") ?? req.headers.get("authorization");
     if (!authHeader) {
       console.error("No authorization header provided");
       return new Response(
@@ -30,25 +31,35 @@ serve(async (req: Request): Promise<Response> => {
       );
     }
 
-    const token = authHeader.replace("Bearer ", "");
+    if (!authHeader.startsWith("Bearer ")) {
+      console.error("Authorization header is not Bearer token");
+      return new Response(
+        JSON.stringify({ error: "Unauthorized", code: "BAD_AUTH_HEADER" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const token = authHeader.slice("Bearer ".length);
 
     // Create Supabase clients
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-    // User client to verify the requesting user
-    const userClient = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } },
-    });
-
     // Service client for admin operations
     const adminClient = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Verify the requesting user with getUser
-    const { data: userData, error: userError } = await userClient.auth.getUser();
-    if (userError || !userData.user) {
-      console.error("Failed to verify user:", userError);
+    // Verify JWT locally using signing keys (JWKS)
+    const issuer = `${supabaseUrl}/auth/v1`;
+    const jwks = createRemoteJWKSet(new URL(`${issuer}/.well-known/jwks.json`));
+
+    let requesterUserId: string;
+    try {
+      const { payload } = await jwtVerify(token, jwks, { issuer });
+      requesterUserId = String(payload.sub || "");
+      if (!requesterUserId) throw new Error("Missing sub");
+    } catch (e) {
+      console.error("Failed to verify token:", e);
       return new Response(
         JSON.stringify({ error: "Unauthorized", code: "INVALID_TOKEN" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -59,7 +70,7 @@ serve(async (req: Request): Promise<Response> => {
     const { data: roleData, error: roleError } = await adminClient
       .from("user_roles")
       .select("role")
-      .eq("user_id", userData.user.id)
+      .eq("user_id", requesterUserId)
       .single();
 
     if (roleError || roleData?.role !== "admin") {
@@ -94,7 +105,7 @@ serve(async (req: Request): Promise<Response> => {
       );
     }
 
-    console.log(`Admin ${userData.user.id} creating user: ${email} with role: ${role}`);
+    console.log(`Admin ${requesterUserId} creating user: ${email} with role: ${role}`);
 
     // Use admin client to create the user (doesn't affect current session)
     const { data: newUser, error: createError } = await adminClient.auth.admin.createUser({
