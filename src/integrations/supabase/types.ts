@@ -109,6 +109,42 @@ export type Database = {
           },
         ]
       }
+      classroom_locations: {
+        Row: {
+          building: string | null
+          created_at: string
+          id: string
+          latitude: number
+          longitude: number
+          name: string
+          radius_meters: number
+          room_number: string | null
+          updated_at: string
+        }
+        Insert: {
+          building?: string | null
+          created_at?: string
+          id?: string
+          latitude: number
+          longitude: number
+          name: string
+          radius_meters?: number
+          room_number?: string | null
+          updated_at?: string
+        }
+        Update: {
+          building?: string | null
+          created_at?: string
+          id?: string
+          latitude?: number
+          longitude?: number
+          name?: string
+          radius_meters?: number
+          room_number?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       course_enrollments: {
         Row: {
           course_id: string
@@ -233,6 +269,265 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      proxy_attempt_logs: {
+        Row: {
+          attempt_type: string
+          created_at: string
+          device_fingerprint: string | null
+          failure_reason: string
+          id: string
+          ip_address: string | null
+          latitude: number | null
+          longitude: number | null
+          qr_token_attempted: string | null
+          session_id: string | null
+          student_id: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          attempt_type: string
+          created_at?: string
+          device_fingerprint?: string | null
+          failure_reason: string
+          id?: string
+          ip_address?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          qr_token_attempted?: string | null
+          session_id?: string | null
+          student_id?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          attempt_type?: string
+          created_at?: string
+          device_fingerprint?: string | null
+          failure_reason?: string
+          id?: string
+          ip_address?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          qr_token_attempted?: string | null
+          session_id?: string | null
+          student_id?: string | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "proxy_attempt_logs_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "secure_attendance_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proxy_attempt_logs_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      secure_attendance_records: {
+        Row: {
+          created_at: string
+          device_id: string | null
+          distance_from_classroom_meters: number | null
+          gps_accuracy_meters: number | null
+          id: string
+          latitude: number | null
+          longitude: number | null
+          marked_at: string
+          qr_token_used: string
+          selfie_url: string | null
+          session_id: string
+          student_id: string
+          verification_notes: string | null
+          verification_status: string
+        }
+        Insert: {
+          created_at?: string
+          device_id?: string | null
+          distance_from_classroom_meters?: number | null
+          gps_accuracy_meters?: number | null
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          marked_at?: string
+          qr_token_used: string
+          selfie_url?: string | null
+          session_id: string
+          student_id: string
+          verification_notes?: string | null
+          verification_status?: string
+        }
+        Update: {
+          created_at?: string
+          device_id?: string | null
+          distance_from_classroom_meters?: number | null
+          gps_accuracy_meters?: number | null
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          marked_at?: string
+          qr_token_used?: string
+          selfie_url?: string | null
+          session_id?: string
+          student_id?: string
+          verification_notes?: string | null
+          verification_status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "secure_attendance_records_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: false
+            referencedRelation: "student_devices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "secure_attendance_records_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "secure_attendance_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "secure_attendance_records_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      secure_attendance_sessions: {
+        Row: {
+          attendance_count: number
+          classroom_location_id: string | null
+          course_id: string
+          created_at: string
+          current_qr_expires_at: string | null
+          current_qr_token: string | null
+          end_time: string | null
+          id: string
+          qr_rotation_interval_seconds: number
+          qr_secret: string
+          require_gps: boolean
+          require_selfie: boolean
+          session_date: string
+          start_time: string
+          status: string
+          teacher_id: string
+          time_window_minutes: number
+          updated_at: string
+        }
+        Insert: {
+          attendance_count?: number
+          classroom_location_id?: string | null
+          course_id: string
+          created_at?: string
+          current_qr_expires_at?: string | null
+          current_qr_token?: string | null
+          end_time?: string | null
+          id?: string
+          qr_rotation_interval_seconds?: number
+          qr_secret: string
+          require_gps?: boolean
+          require_selfie?: boolean
+          session_date?: string
+          start_time?: string
+          status?: string
+          teacher_id: string
+          time_window_minutes?: number
+          updated_at?: string
+        }
+        Update: {
+          attendance_count?: number
+          classroom_location_id?: string | null
+          course_id?: string
+          created_at?: string
+          current_qr_expires_at?: string | null
+          current_qr_token?: string | null
+          end_time?: string | null
+          id?: string
+          qr_rotation_interval_seconds?: number
+          qr_secret?: string
+          require_gps?: boolean
+          require_selfie?: boolean
+          session_date?: string
+          start_time?: string
+          status?: string
+          teacher_id?: string
+          time_window_minutes?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "secure_attendance_sessions_classroom_location_id_fkey"
+            columns: ["classroom_location_id"]
+            isOneToOne: false
+            referencedRelation: "classroom_locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "secure_attendance_sessions_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "secure_attendance_sessions_teacher_id_fkey"
+            columns: ["teacher_id"]
+            isOneToOne: false
+            referencedRelation: "teachers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      student_devices: {
+        Row: {
+          device_fingerprint: string
+          device_name: string | null
+          id: string
+          is_active: boolean
+          last_used_at: string | null
+          registered_at: string
+          student_id: string
+          user_agent: string | null
+        }
+        Insert: {
+          device_fingerprint: string
+          device_name?: string | null
+          id?: string
+          is_active?: boolean
+          last_used_at?: string | null
+          registered_at?: string
+          student_id: string
+          user_agent?: string | null
+        }
+        Update: {
+          device_fingerprint?: string
+          device_name?: string | null
+          id?: string
+          is_active?: boolean
+          last_used_at?: string | null
+          registered_at?: string
+          student_id?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_devices_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       students: {
         Row: {

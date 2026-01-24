@@ -32,6 +32,7 @@ const adminNavigation: NavItem[] = [
   { name: 'Courses', href: '/courses', icon: BookOpen, roles: ['admin'] },
   { name: 'Enrollments', href: '/enrollments', icon: ClipboardList, roles: ['admin'] },
   { name: 'Schedules', href: '/schedules', icon: CalendarDays, roles: ['admin'] },
+  { name: 'Secure Attendance', href: '/secure-attendance', icon: Shield, roles: ['admin'] },
   { name: 'Attendance', href: '/attendance', icon: CalendarCheck, roles: ['admin'] },
   { name: 'Reports', href: '/admin/reports', icon: BarChart3, roles: ['admin'] },
   { name: 'User Accounts', href: '/admin/users', icon: UserPlus, roles: ['admin'] },
@@ -39,6 +40,7 @@ const adminNavigation: NavItem[] = [
 
 const teacherNavigation: NavItem[] = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+  { name: 'Secure Attendance', href: '/secure-attendance', icon: Shield },
   { name: 'Schedules', href: '/schedules', icon: CalendarDays },
   { name: 'Attendance', href: '/attendance', icon: CalendarCheck },
   { name: 'Reports', href: '/attendance/reports', icon: BarChart3 },

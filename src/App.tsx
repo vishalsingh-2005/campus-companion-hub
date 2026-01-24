@@ -21,6 +21,7 @@ import UserManagement from "./pages/admin/UserManagement";
 import Reports from "./pages/admin/Reports";
 import Attendance from "./pages/Attendance";
 import AttendanceReports from "./pages/AttendanceReports";
+import SecureAttendance from "./pages/SecureAttendance";
 import Schedules from "./pages/Schedules";
 import NotFound from "./pages/NotFound";
 
@@ -87,6 +88,14 @@ const App = () => (
               element={
                 <ProtectedRoute allowedRoles={['admin', 'teacher']}>
                   <AttendanceReports />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/secure-attendance"
+              element={
+                <ProtectedRoute allowedRoles={['admin', 'teacher']}>
+                  <SecureAttendance />
                 </ProtectedRoute>
               }
             />
