@@ -134,8 +134,9 @@ serve(async (req) => {
     const userId = claimsData.claims.sub as string;
     const userEmail = (claimsData.claims.email as string) || "";
 
-    const { action, sessionId, roomName, participantName } = await req.json();
-    console.log("Request:", { action, sessionId, roomName, participantName, userId });
+    const body = await req.json();
+    const { action, sessionId, roomName, participantName, participantId } = body;
+    console.log("Request:", { action, sessionId, roomName, participantName, participantId, userId });
 
     if (action === "create-room") {
       // Create a new room and get host token
@@ -399,7 +400,7 @@ serve(async (req) => {
     }
 
     if (action === "approve-participant") {
-      const { participantId } = await req.json();
+      // participantId is already extracted from body above
       
       // Verify user is host of the session
       const { data: participant } = await supabase
