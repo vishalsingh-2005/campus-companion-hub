@@ -17,6 +17,7 @@ import StudentDashboard from "./pages/student/StudentDashboard";
 import TeacherDashboard from "./pages/teacher/TeacherDashboard";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import UserManagement from "./pages/admin/UserManagement";
+import Reports from "./pages/admin/Reports";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -58,6 +59,14 @@ const App = () => (
               element={
                 <ProtectedRoute allowedRoles={['admin']}>
                   <UserManagement />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/reports"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <Reports />
                 </ProtectedRoute>
               }
             />
