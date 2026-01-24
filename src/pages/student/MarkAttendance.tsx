@@ -119,58 +119,83 @@ export default function MarkAttendance() {
     setScanning(true);
     setError(null);
     
-    const scanner = new Html5QrcodeScanner(
-      'qr-reader',
-      {
-        fps: 10,
-        qrbox: { width: 250, height: 250 },
-        supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA],
-        rememberLastUsedCamera: true,
-      },
-      false
-    );
-    
-    scanner.render(
-      async (decodedText) => {
-        // QR code scanned successfully
-        setScanned(true);
-        scanner.clear().catch(console.error);
-        
-        try {
-          // Parse QR data
-          const qrData = JSON.parse(decodedText);
-          const { session_id, token } = qrData;
-          
-          if (!session_id || !token) {
-            throw new Error('Invalid QR code format');
-          }
-          
-          // Mark attendance
-          const success = await markAttendance({
-            session_id,
-            qr_token: token,
-            latitude: location.latitude,
-            longitude: location.longitude,
-            gps_accuracy: location.accuracy,
-            device_fingerprint: fingerprint || undefined,
-            selfie_url: selfieUrl || undefined,
-          });
-          
-          if (success) {
-            setAttendanceMarked(true);
-          }
-        } catch (err: any) {
-          setError(err.message || 'Failed to process QR code');
-          setScanned(false);
+    // Small delay to ensure the DOM element is ready
+    setTimeout(() => {
+      try {
+        const scannerElement = document.getElementById('qr-reader');
+        if (!scannerElement) {
+          console.error('Scanner element not found');
+          setError('Scanner initialization failed. Please refresh the page.');
+          setScanning(false);
+          return;
         }
-      },
-      (errorMessage) => {
-        // Scan error - usually just means no QR found yet
-        console.debug('QR scan:', errorMessage);
+
+        const scanner = new Html5QrcodeScanner(
+          'qr-reader',
+          {
+            fps: 10,
+            qrbox: { width: 250, height: 250 },
+            supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA],
+            rememberLastUsedCamera: true,
+            aspectRatio: 1.0,
+          },
+          false
+        );
+        
+        scanner.render(
+          async (decodedText) => {
+            // QR code scanned successfully
+            console.log('QR Scanned:', decodedText);
+            setScanned(true);
+            scanner.clear().catch(console.error);
+            
+            try {
+              // Parse QR data
+              const qrData = JSON.parse(decodedText);
+              const { session_id, token } = qrData;
+              
+              if (!session_id || !token) {
+                throw new Error('Invalid QR code format');
+              }
+              
+              // Mark attendance
+              const result = await markAttendance({
+                session_id,
+                qr_token: token,
+                latitude: location.latitude,
+                longitude: location.longitude,
+                gps_accuracy: location.accuracy,
+                device_fingerprint: fingerprint || undefined,
+                selfie_url: selfieUrl || undefined,
+              });
+              
+              if (result.success) {
+                setAttendanceMarked(true);
+              } else {
+                setError(result.message || 'Failed to mark attendance');
+                setScanned(false);
+              }
+            } catch (err: any) {
+              console.error('QR Processing Error:', err);
+              setError(err.message || 'Failed to process QR code');
+              setScanned(false);
+            }
+          },
+          (errorMessage) => {
+            // Scan error - usually just means no QR found yet, ignore these
+            if (!errorMessage.includes('No QR code found')) {
+              console.debug('QR scan:', errorMessage);
+            }
+          }
+        );
+        
+        scannerRef.current = scanner;
+      } catch (err: any) {
+        console.error('Scanner initialization error:', err);
+        setError('Failed to start camera. Please check camera permissions.');
+        setScanning(false);
       }
-    );
-    
-    scannerRef.current = scanner;
+    }, 100);
   };
 
   const stopScanner = () => {
@@ -327,17 +352,23 @@ export default function MarkAttendance() {
                   </Button>
                 </div>
               ) : (
-                <div className="space-y-4">
+              <div className="space-y-4">
                   <div 
                     id="qr-reader" 
-                    className="rounded-xl overflow-hidden"
-                    style={{ width: '100%' }}
+                    className="rounded-xl overflow-hidden bg-muted"
+                    style={{ width: '100%', minHeight: '300px' }}
                   />
+                  {isSubmitting && (
+                    <div className="flex items-center justify-center gap-2 text-muted-foreground">
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                      <span>Submitting attendance...</span>
+                    </div>
+                  )}
                   <Button 
                     onClick={stopScanner} 
                     variant="outline" 
                     className="w-full"
-                    disabled={scanned}
+                    disabled={scanned || isSubmitting}
                   >
                     Cancel
                   </Button>
