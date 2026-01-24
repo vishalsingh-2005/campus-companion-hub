@@ -65,7 +65,7 @@ export default function SecureAttendance() {
 
   // Form state for starting new session
   const [selectedCourse, setSelectedCourse] = useState('');
-  const [selectedLocation, setSelectedLocation] = useState('');
+  const [selectedLocation, setSelectedLocation] = useState('none');
   const [timeWindow, setTimeWindow] = useState('15');
   const [requireSelfie, setRequireSelfie] = useState(false);
   const [requireGps, setRequireGps] = useState(true);
@@ -108,7 +108,7 @@ export default function SecureAttendance() {
     await createSession.mutateAsync({
       course_id: selectedCourse,
       teacher_id: teacherId,
-      classroom_location_id: selectedLocation || undefined,
+      classroom_location_id: selectedLocation === 'none' || !selectedLocation ? undefined : selectedLocation,
       time_window_minutes: parseInt(timeWindow),
       require_selfie: requireSelfie,
       require_gps: requireGps,
@@ -116,7 +116,7 @@ export default function SecureAttendance() {
 
     setShowStartForm(false);
     setSelectedCourse('');
-    setSelectedLocation('');
+    setSelectedLocation('none');
     setTimeWindow('15');
     setRequireSelfie(false);
     setRequireGps(true);
@@ -434,7 +434,7 @@ export default function SecureAttendance() {
                         <SelectValue placeholder="Select location (for GPS)" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">No location</SelectItem>
+                        <SelectItem value="none">No location</SelectItem>
                         {locations.map((loc) => (
                           <SelectItem key={loc.id} value={loc.id}>
                             {loc.name} ({loc.building} - {loc.room_number})
