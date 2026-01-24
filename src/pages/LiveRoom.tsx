@@ -37,6 +37,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { InterviewFeedbackDialog } from '@/components/live-sessions/InterviewFeedbackDialog';
 
 // Screen share control component that uses LiveKit hooks
 function ScreenShareButton({ isHost }: { isHost: boolean }) {
@@ -121,6 +122,7 @@ export default function LiveRoom() {
   const [showParticipants, setShowParticipants] = useState(false);
   const [chatMessage, setChatMessage] = useState('');
   const [waitingForApproval, setWaitingForApproval] = useState(false);
+  const [showFeedbackDialog, setShowFeedbackDialog] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   const participantName = user?.user_metadata?.full_name || user?.email || 'Participant';
@@ -221,11 +223,21 @@ export default function LiveRoom() {
     try {
       await endRoom(sessionId);
       toast.success('Session ended');
-      navigate('/live-sessions');
+      
+      // Show feedback dialog for interview sessions
+      if (session?.session_type === 'interview' && isHost) {
+        setShowFeedbackDialog(true);
+      } else {
+        navigate('/live-sessions');
+      }
     } catch (error) {
       console.error('Error ending session:', error);
       toast.error('Failed to end session');
     }
+  };
+
+  const handleFeedbackComplete = () => {
+    navigate('/live-sessions');
   };
 
   const handleApproveParticipant = async (participantId: string) => {
@@ -610,6 +622,19 @@ export default function LiveRoom() {
           </div>
         )}
       </div>
+
+      {/* Interview Feedback Dialog */}
+      <InterviewFeedbackDialog
+        open={showFeedbackDialog}
+        onOpenChange={(open) => {
+          setShowFeedbackDialog(open);
+          if (!open) {
+            navigate('/live-sessions');
+          }
+        }}
+        sessionId={sessionId || ''}
+        onSubmitSuccess={handleFeedbackComplete}
+      />
     </div>
   );
 }
