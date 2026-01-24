@@ -51,12 +51,18 @@ const teacherNavigation: NavItem[] = [
   { name: 'Reports', href: '/attendance/reports', icon: BarChart3 },
 ];
 
+import { Settings, User as UserIcon, Bell } from 'lucide-react';
+
 const studentNavigation: NavItem[] = [
-  { name: 'My Dashboard', href: '/dashboard', icon: LayoutDashboard },
+  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+  { name: 'My Profile', href: '/student/profile', icon: UserIcon },
   { name: 'My Courses', href: '/student/courses', icon: BookOpen },
   { name: 'My Attendance', href: '/student/attendance', icon: CalendarCheck },
+  { name: 'Mark Attendance', href: '/student/mark-attendance', icon: Shield },
   { name: 'My Schedule', href: '/student/schedule', icon: CalendarDays },
-  { name: 'Live Sessions', href: '/live-sessions', icon: Video },
+  { name: 'Live Classes', href: '/live-sessions', icon: Video },
+  { name: 'Notices', href: '/student/notices', icon: Bell },
+  { name: 'Settings', href: '/student/settings', icon: Settings },
 ];
 
 export function Sidebar() {

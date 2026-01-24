@@ -328,5 +328,5 @@ export function useDeviceFingerprint() {
     setFingerprint(generateFingerprint());
   }, []);
 
-  return fingerprint;
+  return { fingerprint };
 }

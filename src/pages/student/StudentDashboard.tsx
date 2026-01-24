@@ -1,14 +1,35 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { PageHeader } from '@/components/ui/page-header';
 import { StatCard } from '@/components/ui/stat-card';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { BookOpen, GraduationCap, ClipboardList, Award, CheckCircle2, XCircle, Clock, CalendarDays, MapPin } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { 
+  BookOpen, 
+  GraduationCap, 
+  CheckCircle2, 
+  XCircle, 
+  Clock, 
+  CalendarDays, 
+  MapPin,
+  Video,
+  QrCode,
+  Eye,
+  Bell,
+  AlertTriangle,
+  ChevronRight,
+  Percent,
+  Calendar
+} from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Skeleton } from '@/components/ui/skeleton';
-import { format } from 'date-fns';
+import { format, isToday, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { DAYS_OF_WEEK } from '@/types/schedule';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface StudentData {
   id: string;
@@ -16,7 +37,13 @@ interface StudentData {
   last_name: string;
   student_id: string;
   email: string;
+  phone: string | null;
   status: string;
+  avatar_url: string | null;
+  gender: string | null;
+  address: string | null;
+  date_of_birth: string | null;
+  enrollment_date: string | null;
 }
 
 interface EnrollmentData {
@@ -24,6 +51,7 @@ interface EnrollmentData {
   grade: string | null;
   status: string;
   courses: {
+    id: string;
     course_name: string;
     course_code: string;
     credits: number;
@@ -47,9 +75,27 @@ interface ScheduleData {
   end_time: string;
   room: string | null;
   courses: {
+    id: string;
     course_name: string;
     course_code: string;
   } | null;
+}
+
+interface LiveSessionData {
+  id: string;
+  title: string;
+  status: string;
+  scheduled_start: string;
+  scheduled_end: string | null;
+}
+
+interface NotificationData {
+  id: string;
+  title: string;
+  message: string;
+  type: 'info' | 'warning' | 'success';
+  created_at: string;
+  is_read: boolean;
 }
 
 function formatTime(time: string) {
@@ -66,7 +112,9 @@ export default function StudentDashboard() {
   const [studentData, setStudentData] = useState<StudentData | null>(null);
   const [enrollments, setEnrollments] = useState<EnrollmentData[]>([]);
   const [attendance, setAttendance] = useState<AttendanceData[]>([]);
-  const [schedules, setSchedules] = useState<ScheduleData[]>([]);
+  const [todaySchedules, setTodaySchedules] = useState<ScheduleData[]>([]);
+  const [liveSessions, setLiveSessions] = useState<LiveSessionData[]>([]);
+  const [notifications, setNotifications] = useState<NotificationData[]>([]);
 
   useEffect(() => {
     async function fetchStudentData() {
@@ -92,6 +140,7 @@ export default function StudentDashboard() {
               grade,
               status,
               courses (
+                id,
                 course_name,
                 course_code,
                 credits
@@ -101,6 +150,9 @@ export default function StudentDashboard() {
 
           if (enrollmentError) throw enrollmentError;
           setEnrollments(enrollmentData || []);
+
+          // Get enrolled course IDs
+          const enrolledCourseIds = enrollmentData?.map(e => e.courses?.id).filter(Boolean) as string[];
 
           // Fetch attendance for this student
           const { data: attendanceData, error: attendanceError } = await supabase
@@ -115,36 +167,58 @@ export default function StudentDashboard() {
               )
             `)
             .eq('student_id', student.id)
-            .order('attendance_date', { ascending: false })
-            .limit(10);
+            .order('attendance_date', { ascending: false });
 
           if (attendanceError) throw attendanceError;
           setAttendance(attendanceData || []);
 
-          // Fetch schedules for enrolled courses
-          const enrolledCourseIds = enrollmentData?.map(e => e.courses?.course_code ? e.courses : null).filter(Boolean).map(() => {
-            return enrollmentData.map(e => e.id);
-          });
-          
-          // Fetch schedules using course_enrollments
-          const { data: scheduleData, error: scheduleError } = await supabase
-            .from('class_schedules')
-            .select(`
-              id,
-              day_of_week,
-              start_time,
-              end_time,
-              room,
-              courses (
-                course_name,
-                course_code
-              )
-            `)
-            .order('day_of_week')
-            .order('start_time');
+          // Fetch today's schedules for enrolled courses
+          const today = new Date().getDay();
+          if (enrolledCourseIds.length > 0) {
+            const { data: scheduleData, error: scheduleError } = await supabase
+              .from('class_schedules')
+              .select(`
+                id,
+                day_of_week,
+                start_time,
+                end_time,
+                room,
+                courses (
+                  id,
+                  course_name,
+                  course_code
+                )
+              `)
+              .eq('day_of_week', today)
+              .in('course_id', enrolledCourseIds)
+              .order('start_time');
 
-          if (scheduleError) throw scheduleError;
-          setSchedules(scheduleData || []);
+            if (scheduleError) throw scheduleError;
+            setTodaySchedules(scheduleData || []);
+          }
+
+          // Fetch upcoming live sessions
+          const { data: sessionData, error: sessionError } = await supabase
+            .from('live_sessions')
+            .select('id, title, status, scheduled_start, scheduled_end')
+            .in('status', ['scheduled', 'waiting', 'live'])
+            .order('scheduled_start')
+            .limit(5);
+
+          if (sessionError) throw sessionError;
+          setLiveSessions(sessionData || []);
+
+          // Fetch notifications (mock for now - can be connected to a notifications table later)
+          setNotifications([
+            {
+              id: '1',
+              title: 'Attendance Reminder',
+              message: 'Remember to mark your attendance for today\'s classes',
+              type: 'info',
+              created_at: new Date().toISOString(),
+              is_read: false,
+            },
+          ]);
         }
       } catch (error) {
         console.error('Error fetching student data:', error);
@@ -165,12 +239,15 @@ export default function StudentDashboard() {
             <Skeleton key={i} className="h-32" />
           ))}
         </div>
+        <div className="grid gap-6 lg:grid-cols-3">
+          <Skeleton className="h-64 lg:col-span-2" />
+          <Skeleton className="h-64" />
+        </div>
       </div>
     );
   }
 
   const enrolledCourses = enrollments.filter((e) => e.status === 'enrolled').length;
-  const completedCourses = enrollments.filter((e) => e.status === 'completed').length;
   const totalCredits = enrollments.reduce((acc, e) => acc + (e.courses?.credits || 0), 0);
   
   // Calculate attendance rate
@@ -184,132 +261,270 @@ export default function StudentDashboard() {
     ? Math.round(((attendanceStats.present + attendanceStats.late) / attendanceStats.total) * 100)
     : 100;
 
+  const isLowAttendance = attendanceRate < 75;
+
   return (
     <div className="space-y-6 animate-fade-in">
-      <PageHeader
-        title={`Welcome, ${studentData?.first_name || 'Student'}!`}
-        description="View your academic progress and enrolled courses"
-      />
+      {/* Welcome Section */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/20 via-primary/10 to-background border p-6 md:p-8">
+        <div className="flex flex-col md:flex-row md:items-center gap-6">
+          <Avatar className="h-20 w-20 border-4 border-background shadow-lg">
+            {studentData?.avatar_url ? (
+              <AvatarImage src={studentData.avatar_url} alt={studentData?.first_name} />
+            ) : (
+              <AvatarFallback className="text-2xl bg-primary text-primary-foreground">
+                {studentData?.first_name?.charAt(0)}{studentData?.last_name?.charAt(0)}
+              </AvatarFallback>
+            )}
+          </Avatar>
+          <div className="flex-1">
+            <h1 className="text-2xl md:text-3xl font-bold">
+              Welcome back, {studentData?.first_name}! 👋
+            </h1>
+            <div className="flex flex-wrap items-center gap-3 mt-2 text-muted-foreground">
+              <span className="flex items-center gap-1">
+                <GraduationCap className="h-4 w-4" />
+                {studentData?.student_id}
+              </span>
+              {studentData?.gender && (
+                <span>• {studentData.gender}</span>
+              )}
+              <Badge variant="secondary">{studentData?.status}</Badge>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="default" size="sm" asChild className="gap-2">
+              <Link to="/student/mark-attendance">
+                <QrCode className="h-4 w-4" />
+                Mark Attendance
+              </Link>
+            </Button>
+            <Button variant="outline" size="sm" asChild className="gap-2">
+              <Link to="/live-sessions">
+                <Video className="h-4 w-4" />
+                Join Class
+              </Link>
+            </Button>
+          </div>
+        </div>
+        
+        {/* Low Attendance Warning */}
+        {isLowAttendance && (
+          <div className="mt-4 flex items-center gap-2 p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive">
+            <AlertTriangle className="h-5 w-5 flex-shrink-0" />
+            <span className="text-sm font-medium">
+              Your attendance is below 75%. Please attend classes regularly to avoid academic issues.
+            </span>
+          </div>
+        )}
+      </div>
 
-      {/* Stats */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      {/* Quick Stats */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          title="Attendance Rate"
+          value={`${attendanceRate}%`}
+          icon={Percent}
+          variant={isLowAttendance ? 'destructive' : 'success'}
+          description={isLowAttendance ? 'Below required' : 'Good standing'}
+        />
         <StatCard
           title="Enrolled Courses"
           value={enrolledCourses}
           icon={BookOpen}
-          trend={{ value: enrolledCourses, isPositive: true }}
-        />
-        <StatCard
-          title="Completed"
-          value={completedCourses}
-          icon={GraduationCap}
-          variant="success"
+          variant="info"
         />
         <StatCard
           title="Total Credits"
           value={totalCredits}
-          icon={ClipboardList}
+          icon={GraduationCap}
           variant="warning"
         />
         <StatCard
-          title="Attendance Rate"
-          value={`${attendanceRate}%`}
-          icon={CheckCircle2}
-          variant="info"
+          title="Today's Classes"
+          value={todaySchedules.length}
+          icon={Calendar}
+          description={todaySchedules.length === 0 ? 'No classes today' : undefined}
         />
       </div>
 
-      {/* Profile Card */}
-      {studentData && (
-        <Card>
-          <CardHeader>
-            <CardTitle>My Profile</CardTitle>
+      {/* Quick Actions */}
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <Link to="/student/mark-attendance" className="group">
+          <Card className="h-full transition-all hover:shadow-md hover:border-primary/50">
+            <CardContent className="flex items-center gap-4 p-4">
+              <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                <QrCode className="h-6 w-6 text-primary" />
+              </div>
+              <div className="flex-1">
+                <p className="font-semibold">Mark Attendance</p>
+                <p className="text-sm text-muted-foreground">Scan QR code</p>
+              </div>
+              <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+            </CardContent>
+          </Card>
+        </Link>
+
+        <Link to="/live-sessions" className="group">
+          <Card className="h-full transition-all hover:shadow-md hover:border-primary/50">
+            <CardContent className="flex items-center gap-4 p-4">
+              <div className="h-12 w-12 rounded-xl bg-info/10 flex items-center justify-center group-hover:bg-info/20 transition-colors">
+                <Video className="h-6 w-6 text-info" />
+              </div>
+              <div className="flex-1">
+                <p className="font-semibold">Live Classes</p>
+                <p className="text-sm text-muted-foreground">{liveSessions.filter(s => s.status === 'live').length} live now</p>
+              </div>
+              <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-info transition-colors" />
+            </CardContent>
+          </Card>
+        </Link>
+
+        <Link to="/student/attendance" className="group">
+          <Card className="h-full transition-all hover:shadow-md hover:border-primary/50">
+            <CardContent className="flex items-center gap-4 p-4">
+              <div className="h-12 w-12 rounded-xl bg-success/10 flex items-center justify-center group-hover:bg-success/20 transition-colors">
+                <Eye className="h-6 w-6 text-success" />
+              </div>
+              <div className="flex-1">
+                <p className="font-semibold">View Attendance</p>
+                <p className="text-sm text-muted-foreground">Full history</p>
+              </div>
+              <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-success transition-colors" />
+            </CardContent>
+          </Card>
+        </Link>
+
+        <Link to="/student/profile" className="group">
+          <Card className="h-full transition-all hover:shadow-md hover:border-primary/50">
+            <CardContent className="flex items-center gap-4 p-4">
+              <div className="h-12 w-12 rounded-xl bg-warning/10 flex items-center justify-center group-hover:bg-warning/20 transition-colors">
+                <GraduationCap className="h-6 w-6 text-warning" />
+              </div>
+              <div className="flex-1">
+                <p className="font-semibold">My Profile</p>
+                <p className="text-sm text-muted-foreground">View details</p>
+              </div>
+              <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-warning transition-colors" />
+            </CardContent>
+          </Card>
+        </Link>
+      </div>
+
+      {/* Main Content Grid */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* Today's Classes */}
+        <Card className="lg:col-span-2">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <CalendarDays className="h-5 w-5 text-primary" />
+              Today's Classes
+            </CardTitle>
+            <Button variant="ghost" size="sm" asChild>
+              <Link to="/student/schedule">View Full Schedule</Link>
+            </Button>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-              <div>
-                <p className="text-sm text-muted-foreground">Student ID</p>
-                <p className="font-medium">{studentData.student_id}</p>
+            {todaySchedules.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-8 text-center">
+                <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
+                  <CalendarDays className="h-8 w-8 text-muted-foreground" />
+                </div>
+                <p className="font-medium">No classes scheduled today</p>
+                <p className="text-sm text-muted-foreground mt-1">Enjoy your day off! 🎉</p>
               </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Full Name</p>
-                <p className="font-medium">{studentData.first_name} {studentData.last_name}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Email</p>
-                <p className="font-medium">{studentData.email}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Status</p>
-                <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
-                  studentData.status === 'active'
-                    ? 'bg-success/10 text-success'
-                    : 'bg-muted text-muted-foreground'
-                }`}>
-                  {studentData.status}
-                </span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Enrolled Courses */}
-      <Card>
-        <CardHeader>
-          <CardTitle>My Courses</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {enrollments.length === 0 ? (
-            <p className="text-muted-foreground text-center py-8">
-              You are not enrolled in any courses yet.
-            </p>
-          ) : (
-            <div className="space-y-4">
-              {enrollments.map((enrollment) => (
-                <div
-                  key={enrollment.id}
-                  className="flex items-center justify-between p-4 rounded-lg border bg-card hover:bg-muted/50 transition-colors"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                      <BookOpen className="h-6 w-6 text-primary" />
+            ) : (
+              <div className="space-y-3">
+                {todaySchedules.map((schedule) => (
+                  <div
+                    key={schedule.id}
+                    className="flex items-center gap-4 p-4 rounded-xl border bg-card hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                      <Clock className="h-6 w-6 text-primary" />
                     </div>
-                    <div>
-                      <p className="font-medium">{enrollment.courses?.course_name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {enrollment.courses?.course_code} • {enrollment.courses?.credits} credits
-                      </p>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold truncate">{schedule.courses?.course_name}</p>
+                      <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                        <span>{schedule.courses?.course_code}</span>
+                        <span>•</span>
+                        <span>{formatTime(schedule.start_time.slice(0, 5))} - {formatTime(schedule.end_time.slice(0, 5))}</span>
+                      </div>
                     </div>
-                  </div>
-                  <div className="text-right">
-                    <span className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${
-                      enrollment.status === 'enrolled'
-                        ? 'bg-info/10 text-info'
-                        : enrollment.status === 'completed'
-                        ? 'bg-success/10 text-success'
-                        : 'bg-muted text-muted-foreground'
-                    }`}>
-                      {enrollment.status}
-                    </span>
-                    {enrollment.grade && (
-                      <p className="text-sm font-medium mt-1">Grade: {enrollment.grade}</p>
+                    {schedule.room && (
+                      <Badge variant="secondary" className="gap-1">
+                        <MapPin className="h-3 w-3" />
+                        {schedule.room}
+                      </Badge>
                     )}
                   </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Live Sessions */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Video className="h-5 w-5 text-primary" />
+              Live Sessions
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {liveSessions.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-8 text-center">
+                <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
+                  <Video className="h-8 w-8 text-muted-foreground" />
                 </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                <p className="font-medium">No live sessions</p>
+                <p className="text-sm text-muted-foreground mt-1">Check back later</p>
+              </div>
+            ) : (
+              <ScrollArea className="h-[250px]">
+                <div className="space-y-3 pr-4">
+                  {liveSessions.map((session) => (
+                    <div
+                      key={session.id}
+                      className="p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="font-medium line-clamp-2">{session.title}</p>
+                        <Badge 
+                          variant={session.status === 'live' ? 'destructive' : 'secondary'}
+                          className={session.status === 'live' ? 'animate-pulse' : ''}
+                        >
+                          {session.status === 'live' ? '🔴 LIVE' : session.status}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {format(parseISO(session.scheduled_start), 'MMM d, h:mm a')}
+                      </p>
+                      {session.status === 'live' && (
+                        <Button size="sm" className="w-full mt-2" asChild>
+                          <Link to={`/live-room/${session.id}`}>Join Now</Link>
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+            )}
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Recent Attendance */}
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="flex items-center gap-2">
             <CheckCircle2 className="h-5 w-5 text-primary" />
             Recent Attendance
           </CardTitle>
+          <Button variant="ghost" size="sm" asChild>
+            <Link to="/student/attendance">View All</Link>
+          </Button>
         </CardHeader>
         <CardContent>
           {attendance.length === 0 ? (
@@ -317,41 +532,42 @@ export default function StudentDashboard() {
               No attendance records yet.
             </p>
           ) : (
-            <div className="space-y-3">
-              {attendance.map((record) => (
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {attendance.slice(0, 6).map((record) => (
                 <div
                   key={record.id}
-                  className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors"
+                  className="flex items-center gap-3 p-3 rounded-lg border bg-card"
                 >
-                  <div className="flex items-center gap-3">
-                    <div className={cn(
-                      'h-10 w-10 rounded-lg flex items-center justify-center',
-                      record.status === 'present' && 'bg-success/10',
-                      record.status === 'absent' && 'bg-destructive/10',
-                      record.status === 'late' && 'bg-warning/10',
-                      record.status === 'excused' && 'bg-info/10'
-                    )}>
-                      {record.status === 'present' && <CheckCircle2 className="h-5 w-5 text-success" />}
-                      {record.status === 'absent' && <XCircle className="h-5 w-5 text-destructive" />}
-                      {record.status === 'late' && <Clock className="h-5 w-5 text-warning" />}
-                      {record.status === 'excused' && <BookOpen className="h-5 w-5 text-info" />}
-                    </div>
-                    <div>
-                      <p className="font-medium">{record.courses?.course_name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {format(new Date(record.attendance_date), 'MMM d, yyyy')}
-                      </p>
-                    </div>
-                  </div>
-                  <span className={cn(
-                    'inline-flex px-3 py-1 rounded-full text-sm font-medium capitalize',
-                    record.status === 'present' && 'bg-success/10 text-success',
-                    record.status === 'absent' && 'bg-destructive/10 text-destructive',
-                    record.status === 'late' && 'bg-warning/10 text-warning',
-                    record.status === 'excused' && 'bg-info/10 text-info'
+                  <div className={cn(
+                    'h-10 w-10 rounded-lg flex items-center justify-center flex-shrink-0',
+                    record.status === 'present' && 'bg-success/10',
+                    record.status === 'absent' && 'bg-destructive/10',
+                    record.status === 'late' && 'bg-warning/10',
+                    record.status === 'excused' && 'bg-info/10'
                   )}>
+                    {record.status === 'present' && <CheckCircle2 className="h-5 w-5 text-success" />}
+                    {record.status === 'absent' && <XCircle className="h-5 w-5 text-destructive" />}
+                    {record.status === 'late' && <Clock className="h-5 w-5 text-warning" />}
+                    {record.status === 'excused' && <BookOpen className="h-5 w-5 text-info" />}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium truncate">{record.courses?.course_code}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {format(new Date(record.attendance_date), 'MMM d')}
+                    </p>
+                  </div>
+                  <Badge 
+                    variant="secondary"
+                    className={cn(
+                      'capitalize',
+                      record.status === 'present' && 'bg-success/10 text-success',
+                      record.status === 'absent' && 'bg-destructive/10 text-destructive',
+                      record.status === 'late' && 'bg-warning/10 text-warning',
+                      record.status === 'excused' && 'bg-info/10 text-info'
+                    )}
+                  >
                     {record.status}
-                  </span>
+                  </Badge>
                 </div>
               ))}
             </div>
@@ -359,64 +575,51 @@ export default function StudentDashboard() {
         </CardContent>
       </Card>
 
-      {/* Weekly Schedule */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <CalendarDays className="h-5 w-5 text-primary" />
-            My Class Schedule
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {schedules.length === 0 ? (
-            <p className="text-muted-foreground text-center py-8">
-              No classes scheduled yet.
-            </p>
-          ) : (
+      {/* Notifications */}
+      {notifications.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Bell className="h-5 w-5 text-primary" />
+              Notifications
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
             <div className="space-y-3">
-              {/* Group by day */}
-              {[1, 2, 3, 4, 5].map((dayIndex) => {
-                const daySchedules = schedules.filter(s => s.day_of_week === dayIndex);
-                if (daySchedules.length === 0) return null;
-                
-                return (
-                  <div key={dayIndex}>
-                    <h4 className="font-medium text-sm text-muted-foreground mb-2">
-                      {DAYS_OF_WEEK[dayIndex]}
-                    </h4>
-                    <div className="space-y-2">
-                      {daySchedules.map((schedule) => (
-                        <div
-                          key={schedule.id}
-                          className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors"
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                              <Clock className="h-5 w-5 text-primary" />
-                            </div>
-                            <div>
-                              <p className="font-medium">{schedule.courses?.course_name}</p>
-                              <p className="text-sm text-muted-foreground">
-                                {formatTime(schedule.start_time.slice(0, 5))} - {formatTime(schedule.end_time.slice(0, 5))}
-                              </p>
-                            </div>
-                          </div>
-                          {schedule.room && (
-                            <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                              <MapPin className="h-4 w-4" />
-                              {schedule.room}
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
+              {notifications.map((notification) => (
+                <div
+                  key={notification.id}
+                  className={cn(
+                    'flex items-start gap-3 p-3 rounded-lg border',
+                    !notification.is_read && 'bg-primary/5 border-primary/20'
+                  )}
+                >
+                  <div className={cn(
+                    'h-10 w-10 rounded-lg flex items-center justify-center flex-shrink-0',
+                    notification.type === 'info' && 'bg-info/10',
+                    notification.type === 'warning' && 'bg-warning/10',
+                    notification.type === 'success' && 'bg-success/10'
+                  )}>
+                    <Bell className={cn(
+                      'h-5 w-5',
+                      notification.type === 'info' && 'text-info',
+                      notification.type === 'warning' && 'text-warning',
+                      notification.type === 'success' && 'text-success'
+                    )} />
                   </div>
-                );
-              })}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium">{notification.title}</p>
+                    <p className="text-sm text-muted-foreground">{notification.message}</p>
+                  </div>
+                  <span className="text-xs text-muted-foreground whitespace-nowrap">
+                    {format(parseISO(notification.created_at), 'h:mm a')}
+                  </span>
+                </div>
+              ))}
             </div>
-          )}
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

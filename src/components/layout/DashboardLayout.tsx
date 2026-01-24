@@ -2,10 +2,10 @@ import { ReactNode } from 'react';
 import { Navigate } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { ProfileDropdown } from './ProfileDropdown';
+import { NotificationsDropdown } from './NotificationsDropdown';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { useAuth } from '@/contexts/AuthContext';
-import { Loader2, Bell } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Loader2 } from 'lucide-react';
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -39,10 +39,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           {/* Right side - theme toggle, notifications and profile */}
           <div className="flex items-center gap-2">
             <ThemeToggle />
-            <Button variant="ghost" size="icon" className="relative">
-              <Bell className="h-5 w-5 text-muted-foreground" />
-              <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-destructive" />
-            </Button>
+            <NotificationsDropdown />
             <ProfileDropdown />
           </div>
         </div>

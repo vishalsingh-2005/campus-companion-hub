@@ -17,6 +17,10 @@ import Enrollments from "./pages/Enrollments";
 import StudentDashboard from "./pages/student/StudentDashboard";
 import StudentCourses from "./pages/student/StudentCourses";
 import StudentSchedule from "./pages/student/StudentSchedule";
+import StudentProfile from "./pages/student/StudentProfile";
+import StudentSettings from "./pages/student/StudentSettings";
+import StudentNotices from "./pages/student/StudentNotices";
+import MarkAttendance from "./pages/student/MarkAttendance";
 import MyAttendance from "./pages/student/MyAttendance";
 import TeacherDashboard from "./pages/teacher/TeacherDashboard";
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -211,6 +215,38 @@ const App = () => (
               element={
                 <ProtectedRoute allowedRoles={['student']}>
                   <StudentSchedule />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/student/profile"
+              element={
+                <ProtectedRoute allowedRoles={['student']}>
+                  <StudentProfile />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/student/settings"
+              element={
+                <ProtectedRoute allowedRoles={['student']}>
+                  <StudentSettings />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/student/notices"
+              element={
+                <ProtectedRoute allowedRoles={['student']}>
+                  <StudentNotices />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/student/mark-attendance"
+              element={
+                <ProtectedRoute allowedRoles={['student']}>
+                  <MarkAttendance />
                 </ProtectedRoute>
               }
             />
