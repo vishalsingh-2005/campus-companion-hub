@@ -11,6 +11,7 @@ export interface Student {
   enrollment_date: string;
   status: string;
   user_id: string | null;
+  avatar_url: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -27,6 +28,7 @@ export interface Teacher {
   hire_date: string;
   status: string;
   user_id: string | null;
+  avatar_url: string | null;
   created_at: string;
   updated_at: string;
 }

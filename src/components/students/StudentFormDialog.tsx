@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -27,6 +27,7 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Student } from '@/types/database';
+import { ProfilePhotoUpload } from '@/components/common/ProfilePhotoUpload';
 
 const studentSchema = z.object({
   student_id: z.string().min(1, 'Student ID is required').max(20),
@@ -39,6 +40,7 @@ const studentSchema = z.object({
   address: z.string().max(500).optional().nullable(),
   enrollment_date: z.string(),
   status: z.string(),
+  avatar_url: z.string().optional().nullable(),
 });
 
 type StudentFormValues = z.infer<typeof studentSchema>;
@@ -56,6 +58,8 @@ export function StudentFormDialog({
   student,
   onSubmit,
 }: StudentFormDialogProps) {
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+
   const form = useForm<StudentFormValues>({
     resolver: zodResolver(studentSchema),
     defaultValues: {
@@ -69,8 +73,12 @@ export function StudentFormDialog({
       address: '',
       enrollment_date: new Date().toISOString().split('T')[0],
       status: 'active',
+      avatar_url: null,
     },
   });
+
+  const firstName = form.watch('first_name');
+  const lastName = form.watch('last_name');
 
   useEffect(() => {
     if (student) {
@@ -85,7 +93,9 @@ export function StudentFormDialog({
         address: student.address || '',
         enrollment_date: student.enrollment_date,
         status: student.status,
+        avatar_url: (student as any).avatar_url || null,
       });
+      setAvatarUrl((student as any).avatar_url || null);
     } else {
       form.reset({
         student_id: '',
@@ -98,7 +108,9 @@ export function StudentFormDialog({
         address: '',
         enrollment_date: new Date().toISOString().split('T')[0],
         status: 'active',
+        avatar_url: null,
       });
+      setAvatarUrl(null);
     }
   }, [student, form, open]);
 
@@ -109,6 +121,7 @@ export function StudentFormDialog({
       date_of_birth: data.date_of_birth || null,
       gender: data.gender || null,
       address: data.address || null,
+      avatar_url: avatarUrl,
     });
   };
 
@@ -121,7 +134,18 @@ export function StudentFormDialog({
           </DialogTitle>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+            {/* Profile Photo */}
+            <div className="flex justify-center pb-4 border-b">
+              <ProfilePhotoUpload
+                currentUrl={avatarUrl}
+                onUpload={setAvatarUrl}
+                folder="students"
+                entityId={student?.id}
+                name={`${firstName} ${lastName}`.trim()}
+              />
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
