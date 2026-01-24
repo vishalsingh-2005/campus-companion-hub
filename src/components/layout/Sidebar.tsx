@@ -1,4 +1,4 @@
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import {
   LayoutDashboard,
@@ -67,9 +67,15 @@ const studentNavigation: NavItem[] = [
 
 export function Sidebar() {
   const location = useLocation();
+  const navigate = useNavigate();
   const { signOut, user } = useAuth();
   const { role, isAdmin, isTeacher, isStudent } = useUserRole();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/auth');
+  };
 
   // Get navigation based on role
   const getNavigation = () => {
@@ -173,7 +179,7 @@ export function Sidebar() {
           </div>
         </div>
         <Button
-          onClick={signOut}
+          onClick={handleSignOut}
           variant="ghost"
           className="w-full justify-start gap-3 text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent"
         >
