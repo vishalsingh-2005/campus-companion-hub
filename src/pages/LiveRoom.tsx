@@ -6,8 +6,10 @@ import {
   RoomAudioRenderer,
   useLocalParticipant,
   useTracks,
+  ControlBar,
 } from '@livekit/components-react';
-import { Track, LocalParticipant, Room } from 'livekit-client';
+import '@livekit/components-styles';
+import { Track, LocalParticipant, Room, createLocalTracks } from 'livekit-client';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -35,6 +37,7 @@ import {
   Clock,
   Send,
   Loader2,
+  AlertCircle,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { InterviewFeedbackDialog } from '@/components/live-sessions/InterviewFeedbackDialog';
@@ -123,9 +126,75 @@ export default function LiveRoom() {
   const [chatMessage, setChatMessage] = useState('');
   const [waitingForApproval, setWaitingForApproval] = useState(false);
   const [showFeedbackDialog, setShowFeedbackDialog] = useState(false);
+  const [mediaPermissions, setMediaPermissions] = useState<{
+    audio: boolean;
+    video: boolean;
+    error?: string;
+  }>({ audio: false, video: false });
+  const [isCheckingMedia, setIsCheckingMedia] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const videoPreviewRef = useRef<HTMLVideoElement>(null);
 
   const participantName = user?.user_metadata?.full_name || user?.email || 'Participant';
+
+  // Check media permissions on mount
+  useEffect(() => {
+    const checkMediaPermissions = async () => {
+      setIsCheckingMedia(true);
+      try {
+        // Request both audio and video permissions
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: true,
+          video: true,
+        });
+        
+        // Attach to preview video element
+        if (videoPreviewRef.current) {
+          videoPreviewRef.current.srcObject = stream;
+        }
+        
+        setMediaPermissions({
+          audio: stream.getAudioTracks().length > 0,
+          video: stream.getVideoTracks().length > 0,
+        });
+        
+        console.log('Media permissions granted:', {
+          audioTracks: stream.getAudioTracks().length,
+          videoTracks: stream.getVideoTracks().length,
+        });
+      } catch (error: any) {
+        console.error('Media permission error:', error);
+        let errorMessage = 'Unable to access camera/microphone';
+        
+        if (error.name === 'NotAllowedError') {
+          errorMessage = 'Camera/microphone access denied. Please allow access in your browser settings.';
+        } else if (error.name === 'NotFoundError') {
+          errorMessage = 'No camera or microphone found. Please connect a device.';
+        } else if (error.name === 'NotReadableError') {
+          errorMessage = 'Camera/microphone is in use by another application.';
+        }
+        
+        setMediaPermissions({
+          audio: false,
+          video: false,
+          error: errorMessage,
+        });
+        toast.error(errorMessage);
+      } finally {
+        setIsCheckingMedia(false);
+      }
+    };
+
+    checkMediaPermissions();
+
+    // Cleanup on unmount
+    return () => {
+      if (videoPreviewRef.current?.srcObject) {
+        const stream = videoPreviewRef.current.srcObject as MediaStream;
+        stream.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (session && user) {
@@ -158,11 +227,23 @@ export default function LiveRoom() {
     };
   }, [sessionId, refetchMessages]);
 
+  // Stop preview stream before joining room
+  const stopPreviewStream = useCallback(() => {
+    if (videoPreviewRef.current?.srcObject) {
+      const stream = videoPreviewRef.current.srcObject as MediaStream;
+      stream.getTracks().forEach(track => track.stop());
+      videoPreviewRef.current.srcObject = null;
+    }
+  }, []);
+
   const handleStartSession = async () => {
     if (!sessionId) return;
     
     setIsConnecting(true);
     try {
+      // Stop preview stream before connecting
+      stopPreviewStream();
+      
       const data = await createRoom(sessionId, participantName);
       setToken(data.token);
       setLivekitUrl(data.livekitUrl);
@@ -181,6 +262,9 @@ export default function LiveRoom() {
     
     setIsConnecting(true);
     try {
+      // Stop preview stream before connecting
+      stopPreviewStream();
+      
       const data = await joinRoom(sessionId, participantName);
       
       if (data.status === 'waiting') {
@@ -350,11 +434,70 @@ export default function LiveRoom() {
                 </div>
               ) : (
                 <div className="flex flex-col gap-4">
-                  {/* Device preview would go here */}
-                  <div className="aspect-video bg-muted rounded-lg flex items-center justify-center">
-                    <div className="text-center text-muted-foreground">
-                      <Video className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                      <p>Camera preview</p>
+                  {/* Media permission error */}
+                  {mediaPermissions.error && (
+                    <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 text-destructive">
+                      <AlertCircle className="h-5 w-5 flex-shrink-0" />
+                      <p className="text-sm">{mediaPermissions.error}</p>
+                    </div>
+                  )}
+
+                  {/* Device preview */}
+                  <div className="aspect-video bg-muted rounded-lg flex items-center justify-center relative overflow-hidden">
+                    {isCheckingMedia ? (
+                      <div className="text-center text-muted-foreground">
+                        <Loader2 className="h-12 w-12 mx-auto mb-2 animate-spin" />
+                        <p>Checking camera and microphone...</p>
+                      </div>
+                    ) : mediaPermissions.video ? (
+                      <video
+                        ref={videoPreviewRef}
+                        autoPlay
+                        muted
+                        playsInline
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="text-center text-muted-foreground">
+                        <VideoOff className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                        <p>Camera not available</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Media status indicators */}
+                  <div className="flex justify-center gap-4">
+                    <div className={cn(
+                      "flex items-center gap-2 px-3 py-2 rounded-lg",
+                      mediaPermissions.audio ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive"
+                    )}>
+                      {mediaPermissions.audio ? (
+                        <>
+                          <Mic className="h-4 w-4" />
+                          <span className="text-sm">Microphone ready</span>
+                        </>
+                      ) : (
+                        <>
+                          <MicOff className="h-4 w-4" />
+                          <span className="text-sm">Microphone unavailable</span>
+                        </>
+                      )}
+                    </div>
+                    <div className={cn(
+                      "flex items-center gap-2 px-3 py-2 rounded-lg",
+                      mediaPermissions.video ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive"
+                    )}>
+                      {mediaPermissions.video ? (
+                        <>
+                          <Video className="h-4 w-4" />
+                          <span className="text-sm">Camera ready</span>
+                        </>
+                      ) : (
+                        <>
+                          <VideoOff className="h-4 w-4" />
+                          <span className="text-sm">Camera unavailable</span>
+                        </>
+                      )}
                     </div>
                   </div>
 
@@ -489,6 +632,31 @@ export default function LiveRoom() {
             onDisconnected={() => {
               setToken(null);
               navigate('/live-sessions');
+            }}
+            onMediaDeviceFailure={(failure) => {
+              console.error('Media device failure:', failure);
+              toast.error(`Media device error. Please check your camera and microphone settings.`);
+            }}
+            onError={(error) => {
+              console.error('LiveKit error:', error);
+              toast.error(`Connection error: ${error.message}`);
+            }}
+            options={{
+              audioCaptureDefaults: {
+                echoCancellation: true,
+                noiseSuppression: true,
+                autoGainControl: true,
+              },
+              videoCaptureDefaults: {
+                resolution: { width: 1280, height: 720 },
+              },
+              publishDefaults: {
+                audioPreset: {
+                  maxBitrate: 32000,
+                },
+                dtx: true,
+                simulcast: true,
+              },
             }}
             style={{ height: '100%' }}
           >
