@@ -1,5 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+import { createRemoteJWKSet, jwtVerify } from 'https://esm.sh/jose@5.9.6';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -47,7 +48,7 @@ serve(async (req) => {
   }
 
   try {
-    const authHeader = req.headers.get('Authorization');
+    const authHeader = req.headers.get('Authorization') ?? req.headers.get('authorization');
     if (!authHeader?.startsWith('Bearer ')) {
       return new Response(
         JSON.stringify({ error: 'Unauthorized', code: 'NO_AUTH' }),
@@ -57,29 +58,31 @@ serve(async (req) => {
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
-
-    // User client for auth verification
-    const userClient = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } },
-    });
 
     // Service client for database operations
     const serviceClient = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Verify user using getClaims
+    // Verify JWT locally using signing keys (JWKS)
     const token = authHeader.slice('Bearer '.length);
-    const { data: claimsData, error: claimsError } = await userClient.auth.getClaims(token);
-    
-    if (claimsError || !claimsData?.claims?.sub) {
-      console.error('Auth error:', claimsError);
+    const issuer = `${supabaseUrl}/auth/v1`;
+    const jwks = createRemoteJWKSet(new URL(`${issuer}/.well-known/jwks.json`));
+
+    let userId: string;
+    try {
+      const { payload } = await jwtVerify(token, jwks, {
+        issuer,
+        audience: 'authenticated',
+      });
+      userId = String(payload.sub || '');
+      if (!userId) throw new Error('Missing sub');
+    } catch (e) {
+      console.error('Auth error:', e);
       return new Response(
         JSON.stringify({ error: 'Invalid token', code: 'INVALID_TOKEN' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const userId = claimsData.claims.sub as string;
     const body = await req.json();
     const { action } = body;
 
