@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -6,8 +8,6 @@
    Inspiration: Modern admin dashboards (Linear, Stripe)
    Palette: Deep slate with teal accents - professional yet engaging
 */
-
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 @layer base {
   :root {
@@ -292,4 +292,70 @@
 
 .data-table tbody tr {
   @apply transition-colors hover:bg-muted/30;
+}
+
+/* LiveKit Video Conference Styles */
+.lk-room-container {
+  @apply h-full w-full bg-background;
+}
+
+.lk-video-conference {
+  @apply h-full w-full;
+}
+
+.lk-grid-layout {
+  @apply h-full w-full gap-2 p-2;
+}
+
+.lk-participant-tile {
+  @apply rounded-lg overflow-hidden bg-muted;
+}
+
+.lk-participant-name {
+  @apply text-sm font-medium text-foreground bg-background/80 px-2 py-1 rounded;
+}
+
+.lk-control-bar {
+  @apply bg-card border-t border-border p-3 flex items-center justify-center gap-2;
+}
+
+.lk-button {
+  @apply inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition-colors;
+  @apply bg-muted hover:bg-muted/80 text-foreground;
+}
+
+.lk-button-destructive {
+  @apply bg-destructive text-destructive-foreground hover:bg-destructive/90;
+}
+
+.lk-chat {
+  @apply h-full flex flex-col bg-card;
+}
+
+.lk-chat-messages {
+  @apply flex-1 overflow-y-auto p-4 space-y-4;
+}
+
+.lk-chat-entry {
+  @apply flex flex-col gap-1;
+}
+
+.lk-chat-entry-name {
+  @apply text-sm font-medium text-foreground;
+}
+
+.lk-chat-entry-message {
+  @apply text-sm text-muted-foreground;
+}
+
+.lk-chat-form {
+  @apply p-4 border-t border-border flex gap-2;
+}
+
+.lk-chat-form-input {
+  @apply flex-1 rounded-lg border border-input bg-background px-3 py-2 text-sm;
+}
+
+.lk-chat-form-button {
+  @apply inline-flex items-center justify-center rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground;
 }
