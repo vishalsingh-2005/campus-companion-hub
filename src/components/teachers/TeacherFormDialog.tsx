@@ -50,7 +50,7 @@ interface TeacherFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   teacher: Teacher | null;
-  onSubmit: (data: TeacherFormValues) => void;
+  onSubmit: (data: TeacherFormValues) => void | Promise<void>;
 }
 
 export function TeacherFormDialog({
@@ -117,6 +117,23 @@ export function TeacherFormDialog({
       setUserId(null);
     }
   }, [teacher, form, open]);
+
+  const persistLinkedAccountIfEditing = async (newUserId: string) => {
+    // If the teacher already exists (edit mode), persist the linked account immediately
+    // so the Teachers table shows "Linked" without requiring an extra manual "Update Teacher" click.
+    if (!teacher) return;
+
+    const current = form.getValues();
+
+    await onSubmit({
+      ...current,
+      phone: current.phone || null,
+      department: current.department || null,
+      qualification: current.qualification || null,
+      avatar_url: avatarUrl,
+      user_id: newUserId,
+    });
+  };
 
   const handleSubmit = (data: TeacherFormValues) => {
     onSubmit({
@@ -285,7 +302,10 @@ export function TeacherFormDialog({
               email={form.watch('email')}
               fullName={`${form.watch('first_name')} ${form.watch('last_name')}`.trim()}
               role="teacher"
-              onUserCreated={setUserId}
+              onUserCreated={(newUserId) => {
+                setUserId(newUserId);
+                void persistLinkedAccountIfEditing(newUserId);
+              }}
               existingUserId={userId}
             />
 
