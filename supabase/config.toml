@@ -1,1 +1,4 @@
 project_id = "gxdmanskjvslganqcplr"
+
+[functions.validate-attendance]
+verify_jwt = false
