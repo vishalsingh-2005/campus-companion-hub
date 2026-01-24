@@ -91,6 +91,7 @@ serve(async (req) => {
     const LIVEKIT_API_SECRET = Deno.env.get("LIVEKIT_API_SECRET");
     const LIVEKIT_URL = Deno.env.get("LIVEKIT_URL");
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+    const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY");
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
     if (!LIVEKIT_API_KEY || !LIVEKIT_API_SECRET || !LIVEKIT_URL) {
@@ -102,31 +103,39 @@ serve(async (req) => {
     }
 
     // Get authorization header
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
+    const authHeader = req.headers.get("Authorization") ?? req.headers.get("authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
       return new Response(
-        JSON.stringify({ error: "Missing authorization header" }),
+        JSON.stringify({ error: "Missing or invalid authorization header" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Create Supabase client
+    // Create Supabase admin client for operations
     const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
+    
+    // Create user client to verify the token
+    const token = authHeader.slice("Bearer ".length);
+    const userClient = createClient(SUPABASE_URL!, SUPABASE_ANON_KEY!, {
+      global: { headers: { Authorization: authHeader } }
+    });
 
-    // Verify user
-    const token = authHeader.replace("Bearer ", "");
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-
-    if (authError || !user) {
-      console.error("Auth error:", authError);
+    // Verify user using getClaims
+    const { data: claimsData, error: claimsError } = await userClient.auth.getClaims(token);
+    
+    if (claimsError || !claimsData?.claims?.sub) {
+      console.error("Auth error:", claimsError);
       return new Response(
         JSON.stringify({ error: "Unauthorized" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
+    const userId = claimsData.claims.sub as string;
+    const userEmail = (claimsData.claims.email as string) || "";
+
     const { action, sessionId, roomName, participantName } = await req.json();
-    console.log("Request:", { action, sessionId, roomName, participantName, userId: user.id });
+    console.log("Request:", { action, sessionId, roomName, participantName, userId });
 
     if (action === "create-room") {
       // Create a new room and get host token
@@ -153,12 +162,12 @@ serve(async (req) => {
       }
 
       // Verify user is the host
-      if (session.host_id !== user.id) {
+      if (session.host_id !== userId) {
         // Check if admin
         const { data: roleData } = await supabase
           .from("user_roles")
           .select("role")
-          .eq("user_id", user.id)
+          .eq("user_id", userId)
           .single();
 
         if (roleData?.role !== "admin") {
@@ -177,8 +186,8 @@ serve(async (req) => {
         LIVEKIT_API_KEY,
         LIVEKIT_API_SECRET,
         generatedRoomName,
-        participantName || user.email || "Host",
-        user.id,
+        participantName || userEmail || "Host",
+        userId,
         true
       );
 
@@ -197,8 +206,8 @@ serve(async (req) => {
         .from("session_participants")
         .upsert({
           session_id: sessionId,
-          user_id: user.id,
-          participant_name: participantName || user.email,
+          user_id: userId,
+          participant_name: participantName || userEmail,
           role: "host",
           joined_at: new Date().toISOString(),
           is_approved: true,
@@ -257,10 +266,10 @@ serve(async (req) => {
           .from("session_participants")
           .select("is_approved")
           .eq("session_id", session.id)
-          .eq("user_id", user.id)
+          .eq("user_id", userId)
           .single();
 
-        const isHost = session.host_id === user.id;
+        const isHost = session.host_id === userId;
         
         if (!isHost && (!existingParticipant || !existingParticipant.is_approved)) {
           // Add to waiting room
@@ -268,8 +277,8 @@ serve(async (req) => {
             .from("session_participants")
             .upsert({
               session_id: session.id,
-              user_id: user.id,
-              participant_name: participantName || user.email,
+              user_id: userId,
+              participant_name: participantName || userEmail,
               role: "participant",
               is_approved: false,
             }, { onConflict: "session_id,user_id" });
@@ -285,15 +294,15 @@ serve(async (req) => {
         }
       }
 
-      const isHost = session.host_id === user.id;
+      const isHost = session.host_id === userId;
       
       // Generate participant token
       const participantToken = await createLiveKitToken(
         LIVEKIT_API_KEY,
         LIVEKIT_API_SECRET,
         session.room_name!,
-        participantName || user.email || "Participant",
-        user.id,
+        participantName || userEmail || "Participant",
+        userId,
         isHost
       );
 
@@ -302,8 +311,8 @@ serve(async (req) => {
         .from("session_participants")
         .upsert({
           session_id: session.id,
-          user_id: user.id,
-          participant_name: participantName || user.email,
+          user_id: userId,
+          participant_name: participantName || userEmail,
           role: isHost ? "host" : "participant",
           joined_at: new Date().toISOString(),
           is_approved: true,
@@ -350,11 +359,11 @@ serve(async (req) => {
         );
       }
 
-      if (session.host_id !== user.id) {
+      if (session.host_id !== userId) {
         const { data: roleData } = await supabase
           .from("user_roles")
           .select("role")
-          .eq("user_id", user.id)
+          .eq("user_id", userId)
           .single();
 
         if (roleData?.role !== "admin") {
@@ -412,7 +421,7 @@ serve(async (req) => {
         .eq("id", participant.session_id)
         .single();
 
-      if (!session || session.host_id !== user.id) {
+      if (!session || session.host_id !== userId) {
         return new Response(
           JSON.stringify({ error: "Only the host can approve participants" }),
           { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
