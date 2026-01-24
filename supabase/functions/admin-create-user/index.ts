@@ -39,13 +39,13 @@ serve(async (req: Request): Promise<Response> => {
 
     // User client to verify the requesting user
     const userClient = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: `Bearer ${token}` } },
+      global: { headers: { Authorization: authHeader } },
     });
 
     // Service client for admin operations
     const adminClient = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Verify the requesting user
+    // Verify the requesting user with getUser
     const { data: userData, error: userError } = await userClient.auth.getUser();
     if (userError || !userData.user) {
       console.error("Failed to verify user:", userError);
@@ -55,8 +55,8 @@ serve(async (req: Request): Promise<Response> => {
       );
     }
 
-    // Check if the user is an admin
-    const { data: roleData, error: roleError } = await userClient
+    // Check if the user is an admin using adminClient to bypass RLS
+    const { data: roleData, error: roleError } = await adminClient
       .from("user_roles")
       .select("role")
       .eq("user_id", userData.user.id)
