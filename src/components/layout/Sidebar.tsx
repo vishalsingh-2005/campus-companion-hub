@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { UserPlus, BarChart3 } from 'lucide-react';
+import { UserPlus, BarChart3, CalendarCheck } from 'lucide-react';
 import { useUserRole } from '@/hooks/useUserRole';
 import { Button } from '@/components/ui/button';
 
@@ -31,12 +31,15 @@ const adminNavigation: NavItem[] = [
   { name: 'Teachers', href: '/teachers', icon: Users, roles: ['admin'] },
   { name: 'Courses', href: '/courses', icon: BookOpen, roles: ['admin'] },
   { name: 'Enrollments', href: '/enrollments', icon: ClipboardList, roles: ['admin'] },
+  { name: 'Attendance', href: '/attendance', icon: CalendarCheck, roles: ['admin'] },
   { name: 'Reports', href: '/admin/reports', icon: BarChart3, roles: ['admin'] },
   { name: 'User Accounts', href: '/admin/users', icon: UserPlus, roles: ['admin'] },
 ];
 
 const teacherNavigation: NavItem[] = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+  { name: 'Attendance', href: '/attendance', icon: CalendarCheck },
+  { name: 'Reports', href: '/attendance/reports', icon: BarChart3 },
 ];
 
 const studentNavigation: NavItem[] = [

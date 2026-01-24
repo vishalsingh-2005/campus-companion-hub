@@ -2,10 +2,12 @@ import { useEffect, useState } from 'react';
 import { PageHeader } from '@/components/ui/page-header';
 import { StatCard } from '@/components/ui/stat-card';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { BookOpen, GraduationCap, ClipboardList, Award } from 'lucide-react';
+import { BookOpen, GraduationCap, ClipboardList, Award, CheckCircle2, XCircle, Clock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Skeleton } from '@/components/ui/skeleton';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 interface StudentData {
   id: string;
@@ -27,11 +29,22 @@ interface EnrollmentData {
   } | null;
 }
 
+interface AttendanceData {
+  id: string;
+  attendance_date: string;
+  status: 'present' | 'absent' | 'late' | 'excused';
+  courses: {
+    course_name: string;
+    course_code: string;
+  } | null;
+}
+
 export default function StudentDashboard() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [studentData, setStudentData] = useState<StudentData | null>(null);
   const [enrollments, setEnrollments] = useState<EnrollmentData[]>([]);
+  const [attendance, setAttendance] = useState<AttendanceData[]>([]);
 
   useEffect(() => {
     async function fetchStudentData() {
@@ -66,6 +79,25 @@ export default function StudentDashboard() {
 
           if (enrollmentError) throw enrollmentError;
           setEnrollments(enrollmentData || []);
+
+          // Fetch attendance for this student
+          const { data: attendanceData, error: attendanceError } = await supabase
+            .from('attendance')
+            .select(`
+              id,
+              attendance_date,
+              status,
+              courses (
+                course_name,
+                course_code
+              )
+            `)
+            .eq('student_id', student.id)
+            .order('attendance_date', { ascending: false })
+            .limit(10);
+
+          if (attendanceError) throw attendanceError;
+          setAttendance(attendanceData || []);
         }
       } catch (error) {
         console.error('Error fetching student data:', error);
@@ -93,9 +125,17 @@ export default function StudentDashboard() {
   const enrolledCourses = enrollments.filter((e) => e.status === 'enrolled').length;
   const completedCourses = enrollments.filter((e) => e.status === 'completed').length;
   const totalCredits = enrollments.reduce((acc, e) => acc + (e.courses?.credits || 0), 0);
-  const averageGrade = enrollments.filter((e) => e.grade).length > 0
-    ? 'A-' // Placeholder - would calculate actual GPA
-    : 'N/A';
+  
+  // Calculate attendance rate
+  const attendanceStats = {
+    present: attendance.filter((a) => a.status === 'present').length,
+    absent: attendance.filter((a) => a.status === 'absent').length,
+    late: attendance.filter((a) => a.status === 'late').length,
+    total: attendance.length,
+  };
+  const attendanceRate = attendanceStats.total > 0
+    ? Math.round(((attendanceStats.present + attendanceStats.late) / attendanceStats.total) * 100)
+    : 100;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -125,9 +165,9 @@ export default function StudentDashboard() {
           variant="warning"
         />
         <StatCard
-          title="Average Grade"
-          value={averageGrade}
-          icon={Award}
+          title="Attendance Rate"
+          value={`${attendanceRate}%`}
+          icon={CheckCircle2}
           variant="info"
         />
       </div>
@@ -209,6 +249,62 @@ export default function StudentDashboard() {
                       <p className="text-sm font-medium mt-1">Grade: {enrollment.grade}</p>
                     )}
                   </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Recent Attendance */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <CheckCircle2 className="h-5 w-5 text-primary" />
+            Recent Attendance
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {attendance.length === 0 ? (
+            <p className="text-muted-foreground text-center py-8">
+              No attendance records yet.
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {attendance.map((record) => (
+                <div
+                  key={record.id}
+                  className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={cn(
+                      'h-10 w-10 rounded-lg flex items-center justify-center',
+                      record.status === 'present' && 'bg-success/10',
+                      record.status === 'absent' && 'bg-destructive/10',
+                      record.status === 'late' && 'bg-warning/10',
+                      record.status === 'excused' && 'bg-info/10'
+                    )}>
+                      {record.status === 'present' && <CheckCircle2 className="h-5 w-5 text-success" />}
+                      {record.status === 'absent' && <XCircle className="h-5 w-5 text-destructive" />}
+                      {record.status === 'late' && <Clock className="h-5 w-5 text-warning" />}
+                      {record.status === 'excused' && <BookOpen className="h-5 w-5 text-info" />}
+                    </div>
+                    <div>
+                      <p className="font-medium">{record.courses?.course_name}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {format(new Date(record.attendance_date), 'MMM d, yyyy')}
+                      </p>
+                    </div>
+                  </div>
+                  <span className={cn(
+                    'inline-flex px-3 py-1 rounded-full text-sm font-medium capitalize',
+                    record.status === 'present' && 'bg-success/10 text-success',
+                    record.status === 'absent' && 'bg-destructive/10 text-destructive',
+                    record.status === 'late' && 'bg-warning/10 text-warning',
+                    record.status === 'excused' && 'bg-info/10 text-info'
+                  )}>
+                    {record.status}
+                  </span>
                 </div>
               ))}
             </div>
