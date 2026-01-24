@@ -27,6 +27,8 @@ import {
 } from '@/components/ui/select';
 import { Teacher } from '@/types/database';
 import { ProfilePhotoUpload } from '@/components/common/ProfilePhotoUpload';
+import { UserLinkSelect } from '@/components/common/UserLinkSelect';
+import { Separator } from '@/components/ui/separator';
 
 const teacherSchema = z.object({
   teacher_id: z.string().min(1, 'Teacher ID is required').max(20),
@@ -39,6 +41,7 @@ const teacherSchema = z.object({
   hire_date: z.string(),
   status: z.string(),
   avatar_url: z.string().optional().nullable(),
+  user_id: z.string().optional().nullable(),
 });
 
 type TeacherFormValues = z.infer<typeof teacherSchema>;
@@ -57,6 +60,7 @@ export function TeacherFormDialog({
   onSubmit,
 }: TeacherFormDialogProps) {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
 
   const form = useForm<TeacherFormValues>({
     resolver: zodResolver(teacherSchema),
@@ -71,6 +75,7 @@ export function TeacherFormDialog({
       hire_date: new Date().toISOString().split('T')[0],
       status: 'active',
       avatar_url: null,
+      user_id: null,
     },
   });
 
@@ -89,9 +94,11 @@ export function TeacherFormDialog({
         qualification: teacher.qualification || '',
         hire_date: teacher.hire_date,
         status: teacher.status,
-        avatar_url: (teacher as any).avatar_url || null,
+        avatar_url: teacher.avatar_url || null,
+        user_id: teacher.user_id || null,
       });
-      setAvatarUrl((teacher as any).avatar_url || null);
+      setAvatarUrl(teacher.avatar_url || null);
+      setUserId(teacher.user_id || null);
     } else {
       form.reset({
         teacher_id: '',
@@ -104,8 +111,10 @@ export function TeacherFormDialog({
         hire_date: new Date().toISOString().split('T')[0],
         status: 'active',
         avatar_url: null,
+        user_id: null,
       });
       setAvatarUrl(null);
+      setUserId(null);
     }
   }, [teacher, form, open]);
 
@@ -116,6 +125,7 @@ export function TeacherFormDialog({
       department: data.department || null,
       qualification: data.qualification || null,
       avatar_url: avatarUrl,
+      user_id: userId,
     });
   };
 
@@ -268,6 +278,16 @@ export function TeacherFormDialog({
                 )}
               />
             </div>
+
+            {/* User Account Linking */}
+            <Separator />
+            <UserLinkSelect
+              type="teacher"
+              value={userId}
+              onChange={setUserId}
+              currentRecordId={teacher?.id}
+            />
+
             <div className="flex justify-end gap-3 pt-4">
               <Button
                 type="button"
