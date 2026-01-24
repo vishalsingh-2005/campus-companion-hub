@@ -12,6 +12,7 @@ import {
   Shield,
   User,
   ShieldAlert,
+  Video,
 } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -32,6 +33,7 @@ const adminNavigation: NavItem[] = [
   { name: 'Teachers', href: '/teachers', icon: Users, roles: ['admin'] },
   { name: 'Courses', href: '/courses', icon: BookOpen, roles: ['admin'] },
   { name: 'Enrollments', href: '/enrollments', icon: ClipboardList, roles: ['admin'] },
+  { name: 'Live Sessions', href: '/live-sessions', icon: Video, roles: ['admin'] },
   { name: 'Schedules', href: '/schedules', icon: CalendarDays, roles: ['admin'] },
   { name: 'Secure Attendance', href: '/secure-attendance', icon: Shield, roles: ['admin'] },
   { name: 'Attendance', href: '/attendance', icon: CalendarCheck, roles: ['admin'] },
@@ -42,6 +44,7 @@ const adminNavigation: NavItem[] = [
 
 const teacherNavigation: NavItem[] = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+  { name: 'Live Sessions', href: '/live-sessions', icon: Video },
   { name: 'Secure Attendance', href: '/secure-attendance', icon: Shield },
   { name: 'Schedules', href: '/schedules', icon: CalendarDays },
   { name: 'Attendance', href: '/attendance', icon: CalendarCheck },
@@ -50,6 +53,7 @@ const teacherNavigation: NavItem[] = [
 
 const studentNavigation: NavItem[] = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+  { name: 'Live Sessions', href: '/live-sessions', icon: Video },
   { name: 'My Attendance', href: '/student/attendance', icon: CalendarCheck },
 ];
 
