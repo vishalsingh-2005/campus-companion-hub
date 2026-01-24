@@ -52,9 +52,11 @@ const teacherNavigation: NavItem[] = [
 ];
 
 const studentNavigation: NavItem[] = [
-  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'Live Sessions', href: '/live-sessions', icon: Video },
+  { name: 'My Dashboard', href: '/dashboard', icon: LayoutDashboard },
+  { name: 'My Courses', href: '/student/courses', icon: BookOpen },
   { name: 'My Attendance', href: '/student/attendance', icon: CalendarCheck },
+  { name: 'My Schedule', href: '/student/schedule', icon: CalendarDays },
+  { name: 'Live Sessions', href: '/live-sessions', icon: Video },
 ];
 
 export function Sidebar() {
