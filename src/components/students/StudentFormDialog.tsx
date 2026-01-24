@@ -123,6 +123,22 @@ export function StudentFormDialog({
     }
   }, [student, form, open]);
 
+  // Immediately persist the linked account when editing an existing student
+  const persistLinkedAccountIfEditing = async (newUserId: string) => {
+    if (!student) return; // Only for edit mode
+
+    const current = form.getValues();
+    await onSubmit({
+      ...current,
+      phone: current.phone || null,
+      date_of_birth: current.date_of_birth || null,
+      gender: current.gender || null,
+      address: current.address || null,
+      avatar_url: avatarUrl,
+      user_id: newUserId,
+    });
+  };
+
   const handleSubmit = (data: StudentFormValues) => {
     onSubmit({
       ...data,
@@ -318,7 +334,10 @@ export function StudentFormDialog({
               email={form.watch('email')}
               fullName={`${form.watch('first_name')} ${form.watch('last_name')}`.trim()}
               role="student"
-              onUserCreated={setUserId}
+              onUserCreated={(newUserId) => {
+                setUserId(newUserId);
+                void persistLinkedAccountIfEditing(newUserId);
+              }}
               existingUserId={userId}
             />
 
