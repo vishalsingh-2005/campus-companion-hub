@@ -24,6 +24,8 @@ import Attendance from "./pages/Attendance";
 import AttendanceReports from "./pages/AttendanceReports";
 import SecureAttendance from "./pages/SecureAttendance";
 import Schedules from "./pages/Schedules";
+import LiveSessions from "./pages/LiveSessions";
+import LiveRoom from "./pages/LiveRoom";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -113,6 +115,22 @@ const App = () => (
               element={
                 <ProtectedRoute allowedRoles={['admin', 'teacher']}>
                   <Schedules />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/live-sessions"
+              element={
+                <ProtectedRoute>
+                  <LiveSessions />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/live-room/:sessionId"
+              element={
+                <ProtectedRoute>
+                  <LiveRoom />
                 </ProtectedRoute>
               }
             />

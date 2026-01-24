@@ -243,6 +243,146 @@ export type Database = {
           },
         ]
       }
+      interview_sessions: {
+        Row: {
+          candidate_email: string | null
+          candidate_id: string | null
+          candidate_name: string | null
+          created_at: string
+          feedback: string | null
+          id: string
+          interview_notes: string | null
+          interview_type: string | null
+          link_expires_at: string | null
+          live_session_id: string
+          rating: number | null
+          secure_link: string | null
+          updated_at: string
+        }
+        Insert: {
+          candidate_email?: string | null
+          candidate_id?: string | null
+          candidate_name?: string | null
+          created_at?: string
+          feedback?: string | null
+          id?: string
+          interview_notes?: string | null
+          interview_type?: string | null
+          link_expires_at?: string | null
+          live_session_id: string
+          rating?: number | null
+          secure_link?: string | null
+          updated_at?: string
+        }
+        Update: {
+          candidate_email?: string | null
+          candidate_id?: string | null
+          candidate_name?: string | null
+          created_at?: string
+          feedback?: string | null
+          id?: string
+          interview_notes?: string | null
+          interview_type?: string | null
+          link_expires_at?: string | null
+          live_session_id?: string
+          rating?: number | null
+          secure_link?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "interview_sessions_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "interview_sessions_live_session_id_fkey"
+            columns: ["live_session_id"]
+            isOneToOne: false
+            referencedRelation: "live_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      live_sessions: {
+        Row: {
+          actual_end: string | null
+          actual_start: string | null
+          course_id: string | null
+          created_at: string
+          description: string | null
+          enable_chat: boolean | null
+          enable_recording: boolean | null
+          enable_screen_share: boolean | null
+          enable_waiting_room: boolean | null
+          host_id: string | null
+          id: string
+          join_token: string | null
+          max_participants: number | null
+          room_name: string | null
+          scheduled_end: string | null
+          scheduled_start: string
+          session_type: Database["public"]["Enums"]["session_type"]
+          status: Database["public"]["Enums"]["session_status"]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          actual_end?: string | null
+          actual_start?: string | null
+          course_id?: string | null
+          created_at?: string
+          description?: string | null
+          enable_chat?: boolean | null
+          enable_recording?: boolean | null
+          enable_screen_share?: boolean | null
+          enable_waiting_room?: boolean | null
+          host_id?: string | null
+          id?: string
+          join_token?: string | null
+          max_participants?: number | null
+          room_name?: string | null
+          scheduled_end?: string | null
+          scheduled_start: string
+          session_type?: Database["public"]["Enums"]["session_type"]
+          status?: Database["public"]["Enums"]["session_status"]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          actual_end?: string | null
+          actual_start?: string | null
+          course_id?: string | null
+          created_at?: string
+          description?: string | null
+          enable_chat?: boolean | null
+          enable_recording?: boolean | null
+          enable_screen_share?: boolean | null
+          enable_waiting_room?: boolean | null
+          host_id?: string | null
+          id?: string
+          join_token?: string | null
+          max_participants?: number | null
+          room_name?: string | null
+          scheduled_end?: string | null
+          scheduled_start?: string
+          session_type?: Database["public"]["Enums"]["session_type"]
+          status?: Database["public"]["Enums"]["session_status"]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "live_sessions_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -488,6 +628,113 @@ export type Database = {
           },
         ]
       }
+      session_chat: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+          message_type: string | null
+          sender_id: string | null
+          sender_name: string | null
+          session_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message: string
+          message_type?: string | null
+          sender_id?: string | null
+          sender_name?: string | null
+          session_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string
+          message_type?: string | null
+          sender_id?: string | null
+          sender_name?: string | null
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_chat_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "live_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      session_participants: {
+        Row: {
+          attendance_marked: boolean | null
+          created_at: string
+          hand_raised: boolean | null
+          id: string
+          is_approved: boolean | null
+          is_muted: boolean | null
+          is_video_off: boolean | null
+          joined_at: string | null
+          left_at: string | null
+          participant_email: string | null
+          participant_name: string | null
+          role: Database["public"]["Enums"]["participant_role"]
+          session_id: string
+          student_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          attendance_marked?: boolean | null
+          created_at?: string
+          hand_raised?: boolean | null
+          id?: string
+          is_approved?: boolean | null
+          is_muted?: boolean | null
+          is_video_off?: boolean | null
+          joined_at?: string | null
+          left_at?: string | null
+          participant_email?: string | null
+          participant_name?: string | null
+          role?: Database["public"]["Enums"]["participant_role"]
+          session_id: string
+          student_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          attendance_marked?: boolean | null
+          created_at?: string
+          hand_raised?: boolean | null
+          id?: string
+          is_approved?: boolean | null
+          is_muted?: boolean | null
+          is_video_off?: boolean | null
+          joined_at?: string | null
+          left_at?: string | null
+          participant_email?: string | null
+          participant_name?: string | null
+          role?: Database["public"]["Enums"]["participant_role"]
+          session_id?: string
+          student_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_participants_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "live_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "session_participants_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       student_devices: {
         Row: {
           device_fingerprint: string
@@ -672,6 +919,9 @@ export type Database = {
     Enums: {
       app_role: "admin" | "user" | "teacher" | "student"
       attendance_status: "present" | "absent" | "late" | "excused"
+      participant_role: "host" | "co_host" | "participant" | "viewer"
+      session_status: "scheduled" | "waiting" | "live" | "ended" | "cancelled"
+      session_type: "live_class" | "interview"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -801,6 +1051,9 @@ export const Constants = {
     Enums: {
       app_role: ["admin", "user", "teacher", "student"],
       attendance_status: ["present", "absent", "late", "excused"],
+      participant_role: ["host", "co_host", "participant", "viewer"],
+      session_status: ["scheduled", "waiting", "live", "ended", "cancelled"],
+      session_type: ["live_class", "interview"],
     },
   },
 } as const
