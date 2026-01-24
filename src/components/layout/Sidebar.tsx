@@ -11,6 +11,7 @@ import {
   X,
   Shield,
   User,
+  ShieldAlert,
 } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -34,6 +35,7 @@ const adminNavigation: NavItem[] = [
   { name: 'Schedules', href: '/schedules', icon: CalendarDays, roles: ['admin'] },
   { name: 'Secure Attendance', href: '/secure-attendance', icon: Shield, roles: ['admin'] },
   { name: 'Attendance', href: '/attendance', icon: CalendarCheck, roles: ['admin'] },
+  { name: 'Proxy Monitoring', href: '/admin/proxy-monitoring', icon: ShieldAlert, roles: ['admin'] },
   { name: 'Reports', href: '/admin/reports', icon: BarChart3, roles: ['admin'] },
   { name: 'User Accounts', href: '/admin/users', icon: UserPlus, roles: ['admin'] },
 ];
