@@ -2,12 +2,13 @@ import { useEffect, useState } from 'react';
 import { PageHeader } from '@/components/ui/page-header';
 import { StatCard } from '@/components/ui/stat-card';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { BookOpen, GraduationCap, ClipboardList, Award, CheckCircle2, XCircle, Clock } from 'lucide-react';
+import { BookOpen, GraduationCap, ClipboardList, Award, CheckCircle2, XCircle, Clock, CalendarDays, MapPin } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { DAYS_OF_WEEK } from '@/types/schedule';
 
 interface StudentData {
   id: string;
@@ -39,12 +40,33 @@ interface AttendanceData {
   } | null;
 }
 
+interface ScheduleData {
+  id: string;
+  day_of_week: number;
+  start_time: string;
+  end_time: string;
+  room: string | null;
+  courses: {
+    course_name: string;
+    course_code: string;
+  } | null;
+}
+
+function formatTime(time: string) {
+  const [hours, minutes] = time.split(':');
+  const h = parseInt(hours);
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const h12 = h % 12 || 12;
+  return `${h12}:${minutes} ${ampm}`;
+}
+
 export default function StudentDashboard() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [studentData, setStudentData] = useState<StudentData | null>(null);
   const [enrollments, setEnrollments] = useState<EnrollmentData[]>([]);
   const [attendance, setAttendance] = useState<AttendanceData[]>([]);
+  const [schedules, setSchedules] = useState<ScheduleData[]>([]);
 
   useEffect(() => {
     async function fetchStudentData() {
@@ -98,6 +120,31 @@ export default function StudentDashboard() {
 
           if (attendanceError) throw attendanceError;
           setAttendance(attendanceData || []);
+
+          // Fetch schedules for enrolled courses
+          const enrolledCourseIds = enrollmentData?.map(e => e.courses?.course_code ? e.courses : null).filter(Boolean).map(() => {
+            return enrollmentData.map(e => e.id);
+          });
+          
+          // Fetch schedules using course_enrollments
+          const { data: scheduleData, error: scheduleError } = await supabase
+            .from('class_schedules')
+            .select(`
+              id,
+              day_of_week,
+              start_time,
+              end_time,
+              room,
+              courses (
+                course_name,
+                course_code
+              )
+            `)
+            .order('day_of_week')
+            .order('start_time');
+
+          if (scheduleError) throw scheduleError;
+          setSchedules(scheduleData || []);
         }
       } catch (error) {
         console.error('Error fetching student data:', error);
@@ -307,6 +354,65 @@ export default function StudentDashboard() {
                   </span>
                 </div>
               ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Weekly Schedule */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <CalendarDays className="h-5 w-5 text-primary" />
+            My Class Schedule
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {schedules.length === 0 ? (
+            <p className="text-muted-foreground text-center py-8">
+              No classes scheduled yet.
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {/* Group by day */}
+              {[1, 2, 3, 4, 5].map((dayIndex) => {
+                const daySchedules = schedules.filter(s => s.day_of_week === dayIndex);
+                if (daySchedules.length === 0) return null;
+                
+                return (
+                  <div key={dayIndex}>
+                    <h4 className="font-medium text-sm text-muted-foreground mb-2">
+                      {DAYS_OF_WEEK[dayIndex]}
+                    </h4>
+                    <div className="space-y-2">
+                      {daySchedules.map((schedule) => (
+                        <div
+                          key={schedule.id}
+                          className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                              <Clock className="h-5 w-5 text-primary" />
+                            </div>
+                            <div>
+                              <p className="font-medium">{schedule.courses?.course_name}</p>
+                              <p className="text-sm text-muted-foreground">
+                                {formatTime(schedule.start_time.slice(0, 5))} - {formatTime(schedule.end_time.slice(0, 5))}
+                              </p>
+                            </div>
+                          </div>
+                          {schedule.room && (
+                            <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                              <MapPin className="h-4 w-4" />
+                              {schedule.room}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </CardContent>
