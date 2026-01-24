@@ -98,7 +98,7 @@ export default function SecureAttendance() {
     setActiveSession(active?.id || null);
   }, [sessions]);
 
-  const { token, expiresAt, isGenerating } = useQRTokenGenerator(
+  const { token, expiresAt, isGenerating, error: qrError, regenerate } = useQRTokenGenerator(
     activeSession,
     30
   );
@@ -222,6 +222,15 @@ export default function SecureAttendance() {
                       level="H"
                       includeMargin
                     />
+                  ) : qrError ? (
+                    <div className="w-[280px] h-[280px] flex flex-col items-center justify-center gap-4">
+                      <Shield className="h-10 w-10 text-destructive" />
+                      <p className="text-sm text-destructive text-center px-4">{qrError}</p>
+                      <Button variant="outline" size="sm" onClick={regenerate} disabled={isGenerating}>
+                        <RefreshCw className={cn('h-4 w-4 mr-2', isGenerating && 'animate-spin')} />
+                        Retry
+                      </Button>
+                    </div>
                   ) : (
                     <div className="w-[280px] h-[280px] flex items-center justify-center">
                       <RefreshCw className="h-8 w-8 animate-spin text-primary" />

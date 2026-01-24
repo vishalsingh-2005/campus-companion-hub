@@ -108,14 +108,27 @@ export function useQRTokenGenerator(sessionId: string | null, rotationSeconds: n
   const [token, setToken] = useState<string | null>(null);
   const [expiresAt, setExpiresAt] = useState<Date | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const generateToken = useCallback(async () => {
-    if (!sessionId) return;
+    if (!sessionId) {
+      console.log('No session ID, skipping token generation');
+      return;
+    }
 
     setIsGenerating(true);
+    setError(null);
+    
     try {
+      // Wait a moment for auth to be ready
       const { data: sessionData } = await supabase.auth.getSession();
-      if (!sessionData.session) throw new Error('Not authenticated');
+      if (!sessionData.session) {
+        console.error('No auth session found');
+        setError('Not authenticated');
+        return;
+      }
+
+      console.log('Generating QR token for session:', sessionId);
 
       const response = await supabase.functions.invoke('validate-attendance', {
         body: {
@@ -124,18 +137,27 @@ export function useQRTokenGenerator(sessionId: string | null, rotationSeconds: n
         },
       });
 
-      if (response.error) throw response.error;
+      console.log('Edge function response:', response);
+
+      if (response.error) {
+        console.error('Edge function error:', response.error);
+        setError(response.error.message || 'Edge function error');
+        return;
+      }
       
       const result = response.data;
       if (result.success) {
         setToken(result.token);
         setExpiresAt(new Date(result.expires_at));
+        setError(null);
+        console.log('Token generated successfully:', result.token);
       } else {
-        throw new Error(result.error || 'Failed to generate token');
+        console.error('Token generation failed:', result);
+        setError(result.error || 'Failed to generate token');
       }
-    } catch (error: any) {
-      console.error('Token generation error:', error);
-      toast.error('Failed to generate QR code');
+    } catch (err: any) {
+      console.error('Token generation error:', err);
+      setError(err.message || 'Failed to generate QR code');
     } finally {
       setIsGenerating(false);
     }
@@ -143,23 +165,33 @@ export function useQRTokenGenerator(sessionId: string | null, rotationSeconds: n
 
   // Auto-rotate token
   useEffect(() => {
-    if (!sessionId) return;
+    if (!sessionId) {
+      setToken(null);
+      setExpiresAt(null);
+      return;
+    }
 
-    // Generate initial token
-    generateToken();
+    // Small delay to ensure everything is ready
+    const initialTimeout = setTimeout(() => {
+      generateToken();
+    }, 500);
 
     // Set up rotation interval
     const interval = setInterval(() => {
       generateToken();
     }, rotationSeconds * 1000);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearTimeout(initialTimeout);
+      clearInterval(interval);
+    };
   }, [sessionId, rotationSeconds, generateToken]);
 
   return {
     token,
     expiresAt,
     isGenerating,
+    error,
     regenerate: generateToken,
   };
 }
