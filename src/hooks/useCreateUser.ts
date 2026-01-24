@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
 
 interface CreateUserResult {
   userId: string | null;
@@ -19,40 +18,29 @@ export function useCreateUser() {
     setIsCreating(true);
 
     try {
-      // Create the auth user
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            full_name: fullName,
-          },
+      // Use admin edge function to create user without affecting current session
+      const { data, error } = await supabase.functions.invoke('admin-create-user', {
+        body: {
+          email,
+          password,
+          full_name: fullName,
+          role,
         },
       });
 
-      if (authError) {
-        throw authError;
+      if (error) {
+        throw new Error(error.message || 'Failed to create user');
       }
 
-      if (!authData.user) {
+      if (data?.error) {
+        throw new Error(data.error);
+      }
+
+      if (!data?.user_id) {
         throw new Error('Failed to create user account');
       }
 
-      // Insert the role into user_roles table
-      const { error: roleError } = await supabase
-        .from('user_roles')
-        .insert({
-          user_id: authData.user.id,
-          role: role,
-        });
-
-      if (roleError) {
-        console.error('Error assigning role:', roleError);
-        // Don't throw - the user was created, role assignment is secondary
-        toast.warning('User created but role assignment failed. Please contact support.');
-      }
-
-      return { userId: authData.user.id, error: null };
+      return { userId: data.user_id, error: null };
     } catch (error: any) {
       console.error('Error creating user:', error);
       return { userId: null, error: error.message };
