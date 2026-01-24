@@ -36,6 +36,7 @@ export default function MarkAttendance() {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [studentId, setStudentId] = useState<string | null>(null);
+  const [currentStep, setCurrentStep] = useState<'location' | 'selfie' | 'scan'>('location');
   const [scanning, setScanning] = useState(false);
   const [scanned, setScanned] = useState(false);
   const [attendanceMarked, setAttendanceMarked] = useState(false);
@@ -253,12 +254,17 @@ export default function MarkAttendance() {
   };
 
   const reset = () => {
+    setCurrentStep('location');
     setScanned(false);
     setAttendanceMarked(false);
     setError(null);
     setSelfieUrl(null);
     setScanning(false);
+    setLocation({ status: 'idle' });
   };
+
+  const canProceedToSelfie = location.status === 'granted';
+  const canProceedToScan = canProceedToSelfie && selfieUrl;
 
   if (loading) {
     return (
@@ -325,201 +331,253 @@ export default function MarkAttendance() {
         </Card>
       )}
 
-      {/* Main Scanner UI */}
+      {/* Step Progress Indicator */}
       {!attendanceMarked && (
-        <div className="grid gap-6 lg:grid-cols-2">
-          {/* QR Scanner */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <QrCode className="h-5 w-5 text-primary" />
-                QR Code Scanner
-              </CardTitle>
-              <CardDescription>
-                Point your camera at the QR code displayed by your teacher
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {!scanning ? (
-                <div className="flex flex-col items-center py-12 border-2 border-dashed rounded-xl">
-                  <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-                    <Camera className="h-8 w-8 text-primary" />
-                  </div>
-                  <p className="font-medium mb-4">Ready to scan</p>
-                  <Button onClick={startScanner} size="lg">
-                    <Camera className="h-5 w-5 mr-2" />
-                    Start Scanner
-                  </Button>
-                </div>
-              ) : (
-              <div className="space-y-4">
-                  <div 
-                    id="qr-reader" 
-                    className="rounded-xl overflow-hidden bg-muted"
-                    style={{ width: '100%', minHeight: '300px' }}
-                  />
-                  {isSubmitting && (
-                    <div className="flex items-center justify-center gap-2 text-muted-foreground">
-                      <Loader2 className="h-5 w-5 animate-spin" />
-                      <span>Submitting attendance...</span>
-                    </div>
-                  )}
-                  <Button 
-                    onClick={stopScanner} 
-                    variant="outline" 
-                    className="w-full"
-                    disabled={scanned || isSubmitting}
-                  >
-                    Cancel
-                  </Button>
-                </div>
-              )}
-              
-              {scanned && !attendanceMarked && !error && (
-                <div className="flex items-center justify-center gap-2 mt-4 text-muted-foreground">
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                  <span>Processing attendance...</span>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+        <div className="flex items-center justify-center gap-2 mb-6">
+          <div className={cn(
+            "flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all",
+            currentStep === 'location' ? "bg-primary text-primary-foreground" : 
+            location.status === 'granted' ? "bg-success/20 text-success" : "bg-muted text-muted-foreground"
+          )}>
+            <MapPin className="h-4 w-4" />
+            <span>1. Location</span>
+            {location.status === 'granted' && <CheckCircle2 className="h-4 w-4" />}
+          </div>
+          <div className="w-8 h-0.5 bg-muted" />
+          <div className={cn(
+            "flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all",
+            currentStep === 'selfie' ? "bg-primary text-primary-foreground" : 
+            selfieUrl ? "bg-success/20 text-success" : "bg-muted text-muted-foreground"
+          )}>
+            <Camera className="h-4 w-4" />
+            <span>2. Selfie</span>
+            {selfieUrl && <CheckCircle2 className="h-4 w-4" />}
+          </div>
+          <div className="w-8 h-0.5 bg-muted" />
+          <div className={cn(
+            "flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all",
+            currentStep === 'scan' ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+          )}>
+            <QrCode className="h-4 w-4" />
+            <span>3. Scan QR</span>
+          </div>
+        </div>
+      )}
 
-          {/* Verification Options */}
-          <div className="space-y-6">
-            {/* GPS Location */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <MapPin className="h-5 w-5 text-primary" />
-                  GPS Location
-                </CardTitle>
-                <CardDescription>
-                  Verify your presence in the classroom
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {location.status === 'idle' && (
-                  <Button onClick={requestLocation} className="w-full">
-                    <MapPin className="h-4 w-4 mr-2" />
-                    Enable Location
-                  </Button>
-                )}
-                
-                {location.status === 'requesting' && (
-                  <div className="flex items-center justify-center gap-2 py-4 text-muted-foreground">
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                    <span>Requesting location access...</span>
-                  </div>
-                )}
-                
-                {location.status === 'granted' && (
-                  <div className="flex items-center gap-3 p-4 rounded-lg bg-success/10 border border-success/20">
-                    <CheckCircle2 className="h-6 w-6 text-success" />
-                    <div>
-                      <p className="font-medium text-success">Location Enabled</p>
-                      <p className="text-sm text-muted-foreground">
-                        Accuracy: {Math.round(location.accuracy || 0)}m
-                      </p>
-                    </div>
-                  </div>
-                )}
-                
-                {(location.status === 'denied' || location.status === 'unavailable') && (
-                  <div className="flex items-center gap-3 p-4 rounded-lg bg-warning/10 border border-warning/20">
-                    <AlertTriangle className="h-6 w-6 text-warning" />
-                    <div>
-                      <p className="font-medium text-warning">Location Unavailable</p>
-                      <p className="text-sm text-muted-foreground">
-                        {location.error || 'Please enable location services'}
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Selfie Capture */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Camera className="h-5 w-5 text-primary" />
-                  Selfie Verification
-                </CardTitle>
-                <CardDescription>
-                  Take a photo to verify your identity (optional)
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {!selfieUrl && !capturingSelfie && (
-                  <Button onClick={startSelfieCapture} variant="outline" className="w-full">
-                    <Camera className="h-4 w-4 mr-2" />
-                    Capture Selfie
-                  </Button>
-                )}
-                
-                {capturingSelfie && (
-                  <div className="space-y-4">
-                    <video
-                      ref={videoRef}
-                      className="w-full rounded-lg bg-black"
-                      autoPlay
-                      playsInline
-                      muted
-                    />
-                    <Button onClick={captureSelfie} className="w-full">
-                      <Camera className="h-4 w-4 mr-2" />
-                      Take Photo
-                    </Button>
-                  </div>
-                )}
-                
-                {selfieUrl && (
-                  <div className="space-y-4">
-                    <img
-                      src={selfieUrl}
-                      alt="Selfie"
-                      className="w-full rounded-lg"
-                    />
-                    <div className="flex gap-2">
-                      <Button 
-                        variant="outline" 
-                        className="flex-1"
-                        onClick={() => setSelfieUrl(null)}
-                      >
-                        Retake
-                      </Button>
-                      <Badge variant="secondary" className="flex items-center gap-1 px-3">
-                        <CheckCircle2 className="h-4 w-4 text-success" />
-                        Captured
-                      </Badge>
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Device Info */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Smartphone className="h-5 w-5 text-primary" />
-                  Device Information
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/50 border">
-                  <Shield className="h-6 w-6 text-primary" />
+      {/* Step 1: Location */}
+      {!attendanceMarked && currentStep === 'location' && (
+        <Card className="max-w-lg mx-auto">
+          <CardHeader className="text-center">
+            <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+              <MapPin className="h-8 w-8 text-primary" />
+            </div>
+            <CardTitle>Step 1: Enable Location</CardTitle>
+            <CardDescription>
+              We need your GPS location to verify you're in the classroom
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {location.status === 'idle' && (
+              <Button onClick={requestLocation} className="w-full" size="lg">
+                <MapPin className="h-5 w-5 mr-2" />
+                Enable Location Access
+              </Button>
+            )}
+            
+            {location.status === 'requesting' && (
+              <div className="flex flex-col items-center gap-3 py-8">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <p className="text-muted-foreground">Requesting location access...</p>
+              </div>
+            )}
+            
+            {location.status === 'granted' && (
+              <>
+                <div className="flex items-center gap-3 p-4 rounded-lg bg-success/10 border border-success/20">
+                  <CheckCircle2 className="h-6 w-6 text-success" />
                   <div>
-                    <p className="font-medium">Device Registered</p>
-                    <p className="text-sm text-muted-foreground font-mono truncate">
-                      {fingerprint ? `ID: ${fingerprint.slice(0, 16)}...` : 'Generating...'}
+                    <p className="font-medium text-success">Location Enabled</p>
+                    <p className="text-sm text-muted-foreground">
+                      Accuracy: {Math.round(location.accuracy || 0)}m
                     </p>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
+                <Button onClick={() => setCurrentStep('selfie')} className="w-full" size="lg">
+                  Continue to Selfie
+                  <CheckCircle2 className="h-5 w-5 ml-2" />
+                </Button>
+              </>
+            )}
+            
+            {(location.status === 'denied' || location.status === 'unavailable') && (
+              <div className="space-y-4">
+                <div className="flex items-center gap-3 p-4 rounded-lg bg-warning/10 border border-warning/20">
+                  <AlertTriangle className="h-6 w-6 text-warning" />
+                  <div>
+                    <p className="font-medium text-warning">Location Unavailable</p>
+                    <p className="text-sm text-muted-foreground">
+                      {location.error || 'Please enable location services in your browser'}
+                    </p>
+                  </div>
+                </div>
+                <Button onClick={requestLocation} variant="outline" className="w-full">
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Try Again
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Step 2: Selfie */}
+      {!attendanceMarked && currentStep === 'selfie' && (
+        <Card className="max-w-lg mx-auto">
+          <CardHeader className="text-center">
+            <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+              <Camera className="h-8 w-8 text-primary" />
+            </div>
+            <CardTitle>Step 2: Take a Selfie</CardTitle>
+            <CardDescription>
+              Capture a photo to verify your identity
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {!selfieUrl && !capturingSelfie && (
+              <Button onClick={startSelfieCapture} className="w-full" size="lg">
+                <Camera className="h-5 w-5 mr-2" />
+                Open Camera
+              </Button>
+            )}
+            
+            {capturingSelfie && (
+              <div className="space-y-4">
+                <video
+                  ref={videoRef}
+                  className="w-full rounded-lg bg-black aspect-square object-cover"
+                  autoPlay
+                  playsInline
+                  muted
+                />
+                <Button onClick={captureSelfie} className="w-full" size="lg">
+                  <Camera className="h-5 w-5 mr-2" />
+                  Take Photo
+                </Button>
+              </div>
+            )}
+            
+            {selfieUrl && (
+              <div className="space-y-4">
+                <img
+                  src={selfieUrl}
+                  alt="Selfie"
+                  className="w-full rounded-lg aspect-square object-cover"
+                />
+                <div className="flex gap-2">
+                  <Button 
+                    variant="outline" 
+                    className="flex-1"
+                    onClick={() => setSelfieUrl(null)}
+                  >
+                    Retake
+                  </Button>
+                  <Button 
+                    className="flex-1"
+                    onClick={() => setCurrentStep('scan')}
+                  >
+                    Continue to Scan
+                    <CheckCircle2 className="h-5 w-5 ml-2" />
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            <Button 
+              variant="ghost" 
+              className="w-full text-muted-foreground"
+              onClick={() => setCurrentStep('location')}
+            >
+              ← Back to Location
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Step 3: QR Scan */}
+      {!attendanceMarked && currentStep === 'scan' && (
+        <Card className="max-w-lg mx-auto">
+          <CardHeader className="text-center">
+            <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+              <QrCode className="h-8 w-8 text-primary" />
+            </div>
+            <CardTitle>Step 3: Scan QR Code</CardTitle>
+            <CardDescription>
+              Point your camera at the QR code displayed by your teacher
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Verification Summary */}
+            <div className="flex gap-4 p-3 rounded-lg bg-muted/50 border mb-4">
+              <div className="flex items-center gap-2 text-sm">
+                <CheckCircle2 className="h-4 w-4 text-success" />
+                <span>Location</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm">
+                <CheckCircle2 className="h-4 w-4 text-success" />
+                <span>Selfie</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm">
+                <Shield className="h-4 w-4 text-primary" />
+                <span className="truncate">Device: {fingerprint?.slice(0, 8)}...</span>
+              </div>
+            </div>
+
+            {!scanning ? (
+              <Button onClick={startScanner} className="w-full" size="lg">
+                <Camera className="h-5 w-5 mr-2" />
+                Start QR Scanner
+              </Button>
+            ) : (
+              <div className="space-y-4">
+                <div 
+                  id="qr-reader" 
+                  className="rounded-xl overflow-hidden bg-muted"
+                  style={{ width: '100%', minHeight: '300px' }}
+                />
+                {isSubmitting && (
+                  <div className="flex items-center justify-center gap-2 text-muted-foreground">
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    <span>Submitting attendance...</span>
+                  </div>
+                )}
+                <Button 
+                  onClick={stopScanner} 
+                  variant="outline" 
+                  className="w-full"
+                  disabled={scanned || isSubmitting}
+                >
+                  Cancel Scan
+                </Button>
+              </div>
+            )}
+            
+            {scanned && !attendanceMarked && !error && (
+              <div className="flex items-center justify-center gap-2 py-4 text-muted-foreground">
+                <Loader2 className="h-5 w-5 animate-spin" />
+                <span>Processing attendance...</span>
+              </div>
+            )}
+
+            <Button 
+              variant="ghost" 
+              className="w-full text-muted-foreground"
+              onClick={() => setCurrentStep('selfie')}
+              disabled={scanning}
+            >
+              ← Back to Selfie
+            </Button>
+          </CardContent>
+        </Card>
       )}
 
       {/* Instructions */}
