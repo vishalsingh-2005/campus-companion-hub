@@ -439,15 +439,24 @@ export default function MarkAttendance() {
             </div>
             <CardTitle>Step 2: Take a Selfie</CardTitle>
             <CardDescription>
-              Capture a photo to verify your identity
+              Capture a photo to verify your identity (may be required by your teacher)
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {!selfieUrl && !capturingSelfie && (
-              <Button onClick={startSelfieCapture} className="w-full" size="lg">
-                <Camera className="h-5 w-5 mr-2" />
-                Open Camera
-              </Button>
+              <div className="space-y-3">
+                <Button onClick={startSelfieCapture} className="w-full" size="lg">
+                  <Camera className="h-5 w-5 mr-2" />
+                  Take Selfie
+                </Button>
+                <Button 
+                  onClick={() => setCurrentStep('scan')} 
+                  variant="outline" 
+                  className="w-full"
+                >
+                  Skip (if not required)
+                </Button>
+              </div>
             )}
             
             {capturingSelfie && (
@@ -461,7 +470,19 @@ export default function MarkAttendance() {
                 />
                 <Button onClick={captureSelfie} className="w-full" size="lg">
                   <Camera className="h-5 w-5 mr-2" />
-                  Take Photo
+                  Capture Photo
+                </Button>
+                <Button 
+                  onClick={() => {
+                    if (streamRef.current) {
+                      streamRef.current.getTracks().forEach(track => track.stop());
+                    }
+                    setCapturingSelfie(false);
+                  }} 
+                  variant="ghost" 
+                  className="w-full"
+                >
+                  Cancel
                 </Button>
               </div>
             )}
@@ -485,7 +506,7 @@ export default function MarkAttendance() {
                     className="flex-1"
                     onClick={() => setCurrentStep('scan')}
                   >
-                    Continue to Scan
+                    Continue
                     <CheckCircle2 className="h-5 w-5 ml-2" />
                   </Button>
                 </div>
