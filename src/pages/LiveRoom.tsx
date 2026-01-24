@@ -1,11 +1,13 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   LiveKitRoom,
   VideoConference,
   RoomAudioRenderer,
+  useLocalParticipant,
+  useTracks,
 } from '@livekit/components-react';
-import { Track } from 'livekit-client';
+import { Track, LocalParticipant, Room } from 'livekit-client';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -23,6 +25,7 @@ import {
   Mic,
   MicOff,
   Monitor,
+  MonitorOff,
   Phone,
   Users,
   MessageSquare,
@@ -34,6 +37,71 @@ import {
   Loader2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+
+// Screen share control component that uses LiveKit hooks
+function ScreenShareButton({ isHost }: { isHost: boolean }) {
+  const { localParticipant } = useLocalParticipant();
+  const [isSharing, setIsSharing] = useState(false);
+  const [isToggling, setIsToggling] = useState(false);
+
+  // Track screen share state
+  const tracks = useTracks([Track.Source.ScreenShare]);
+  const hasScreenShare = tracks.some(
+    (track) => track.participant.identity === localParticipant?.identity
+  );
+
+  useEffect(() => {
+    setIsSharing(hasScreenShare);
+  }, [hasScreenShare]);
+
+  const toggleScreenShare = useCallback(async () => {
+    if (!localParticipant) return;
+    
+    setIsToggling(true);
+    try {
+      if (isSharing) {
+        await localParticipant.setScreenShareEnabled(false);
+        toast.success('Screen sharing stopped');
+      } else {
+        await localParticipant.setScreenShareEnabled(true);
+        toast.success('Screen sharing started');
+      }
+    } catch (error: any) {
+      console.error('Error toggling screen share:', error);
+      if (error.name === 'NotAllowedError') {
+        toast.error('Screen sharing permission denied');
+      } else {
+        toast.error('Failed to toggle screen share');
+      }
+    } finally {
+      setIsToggling(false);
+    }
+  }, [localParticipant, isSharing]);
+
+  if (!isHost) return null;
+
+  return (
+    <Button
+      variant={isSharing ? 'default' : 'outline'}
+      size="sm"
+      onClick={toggleScreenShare}
+      disabled={isToggling}
+      className={cn(
+        'gap-2',
+        isSharing && 'bg-primary text-primary-foreground'
+      )}
+    >
+      {isToggling ? (
+        <Loader2 className="h-4 w-4 animate-spin" />
+      ) : isSharing ? (
+        <MonitorOff className="h-4 w-4" />
+      ) : (
+        <Monitor className="h-4 w-4" />
+      )}
+      {isSharing ? 'Stop Sharing' : 'Share Screen'}
+    </Button>
+  );
+}
 
 export default function LiveRoom() {
   const { sessionId } = useParams<{ sessionId: string }>();
@@ -412,7 +480,17 @@ export default function LiveRoom() {
             }}
             style={{ height: '100%' }}
           >
-            <VideoConference />
+            <div className="h-full flex flex-col">
+              {/* Screen share control bar for hosts */}
+              {isHost && (
+                <div className="absolute top-4 right-4 z-10">
+                  <ScreenShareButton isHost={isHost} />
+                </div>
+              )}
+              <div className="flex-1">
+                <VideoConference />
+              </div>
+            </div>
             <RoomAudioRenderer />
           </LiveKitRoom>
         </div>
