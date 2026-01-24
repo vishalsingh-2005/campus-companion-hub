@@ -79,7 +79,7 @@ export default function ProxyMonitoring() {
   
   const { attempts, stats, patterns, isLoading, refetch } = useProxyAttempts({
     dateRange,
-    attemptType: attemptType || undefined,
+    attemptType: attemptType === 'all' ? undefined : attemptType || undefined,
   });
   
   const { data: attemptTypes } = useAttemptTypes();
@@ -174,12 +174,12 @@ export default function ProxyMonitoring() {
                 <SelectItem value="all">All time</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={attemptType} onValueChange={setAttemptType}>
+            <Select value={attemptType || 'all'} onValueChange={(v) => setAttemptType(v === 'all' ? '' : v)}>
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Attempt type" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All types</SelectItem>
+                <SelectItem value="all">All types</SelectItem>
                 {attemptTypes?.map((type) => (
                   <SelectItem key={type} value={type}>
                     {type.replace(/_/g, ' ')}
