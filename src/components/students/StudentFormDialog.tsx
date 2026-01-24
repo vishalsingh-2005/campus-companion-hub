@@ -28,7 +28,7 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { Student } from '@/types/database';
 import { ProfilePhotoUpload } from '@/components/common/ProfilePhotoUpload';
-import { UserLinkSelect } from '@/components/common/UserLinkSelect';
+import { CreateCredentialsSection } from '@/components/common/CreateCredentialsSection';
 import { Separator } from '@/components/ui/separator';
 
 const studentSchema = z.object({
@@ -312,13 +312,14 @@ export function StudentFormDialog({
               )}
             />
 
-            {/* User Account Linking */}
+            {/* User Account Credentials */}
             <Separator />
-            <UserLinkSelect
-              type="student"
-              value={userId}
-              onChange={setUserId}
-              currentRecordId={student?.id}
+            <CreateCredentialsSection
+              email={form.watch('email')}
+              fullName={`${form.watch('first_name')} ${form.watch('last_name')}`.trim()}
+              role="student"
+              onUserCreated={setUserId}
+              existingUserId={userId}
             />
 
             <div className="flex justify-end gap-3 pt-4">
