@@ -27,7 +27,7 @@ import {
 } from '@/components/ui/select';
 import { Teacher } from '@/types/database';
 import { ProfilePhotoUpload } from '@/components/common/ProfilePhotoUpload';
-import { UserLinkSelect } from '@/components/common/UserLinkSelect';
+import { CreateCredentialsSection } from '@/components/common/CreateCredentialsSection';
 import { Separator } from '@/components/ui/separator';
 
 const teacherSchema = z.object({
@@ -279,13 +279,14 @@ export function TeacherFormDialog({
               />
             </div>
 
-            {/* User Account Linking */}
+            {/* User Account Credentials */}
             <Separator />
-            <UserLinkSelect
-              type="teacher"
-              value={userId}
-              onChange={setUserId}
-              currentRecordId={teacher?.id}
+            <CreateCredentialsSection
+              email={form.watch('email')}
+              fullName={`${form.watch('first_name')} ${form.watch('last_name')}`.trim()}
+              role="teacher"
+              onUserCreated={setUserId}
+              existingUserId={userId}
             />
 
             <div className="flex justify-end gap-3 pt-4">
