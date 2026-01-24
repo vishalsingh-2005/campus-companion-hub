@@ -1,4 +1,4 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 
 const corsHeaders = {
@@ -67,11 +67,11 @@ serve(async (req) => {
     // Service client for database operations
     const serviceClient = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Verify user
-    const token = authHeader.replace('Bearer ', '');
-    const { data: claimsData, error: claimsError } = await userClient.auth.getUser(token);
+    // Verify user using getClaims
+    const token = authHeader.slice('Bearer '.length);
+    const { data: claimsData, error: claimsError } = await userClient.auth.getClaims(token);
     
-    if (claimsError || !claimsData?.user) {
+    if (claimsError || !claimsData?.claims?.sub) {
       console.error('Auth error:', claimsError);
       return new Response(
         JSON.stringify({ error: 'Invalid token', code: 'INVALID_TOKEN' }),
@@ -79,7 +79,7 @@ serve(async (req) => {
       );
     }
 
-    const userId = claimsData.user.id;
+    const userId = claimsData.claims.sub as string;
     const body = await req.json();
     const { action } = body;
 
