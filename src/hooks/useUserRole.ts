@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -14,11 +14,11 @@ interface UserRoleData {
 }
 
 export function useUserRole(): UserRoleData {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [role, setRole] = useState<AppRole>('user');
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchRole = async () => {
+  const fetchRole = useCallback(async () => {
     if (!user) {
       setRole('user');
       setIsLoading(false);
@@ -26,6 +26,7 @@ export function useUserRole(): UserRoleData {
     }
 
     try {
+      setIsLoading(true);
       const { data, error } = await supabase
         .from('user_roles')
         .select('role')
@@ -36,8 +37,10 @@ export function useUserRole(): UserRoleData {
         console.error('Error fetching user role:', error);
         setRole('user');
       } else if (data) {
+        console.log('User role fetched:', data.role);
         setRole(data.role as AppRole);
       } else {
+        console.log('No role found for user, defaulting to user');
         setRole('user');
       }
     } catch (error) {
@@ -46,15 +49,20 @@ export function useUserRole(): UserRoleData {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user]);
 
   useEffect(() => {
+    // Don't fetch role while auth is still loading
+    if (authLoading) {
+      return;
+    }
+    
     fetchRole();
-  }, [user]);
+  }, [user?.id, authLoading, fetchRole]);
 
   return {
     role,
-    isLoading,
+    isLoading: isLoading || authLoading,
     isAdmin: role === 'admin',
     isTeacher: role === 'teacher',
     isStudent: role === 'student',
