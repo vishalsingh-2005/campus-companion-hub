@@ -7,6 +7,7 @@ import { ArrowLeft, Loader2, Mail, Lock } from 'lucide-react';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -30,7 +31,7 @@ export function RoleLoginForm({
   title,
   subtitle,
 }: RoleLoginFormProps) {
-  const { signIn } = useAuth();
+  const { signIn, signOut } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -68,6 +69,33 @@ export function RoleLoginForm({
           toast.error(error.message);
         }
       } else {
+        // Validate that the signed-in user has the selected portal role
+        const { data: userData, error: userErr } = await supabase.auth.getUser();
+        if (userErr || !userData.user) {
+          await signOut();
+          toast.error('Could not verify your account. Please try again.');
+          return;
+        }
+
+        const { data: roleRows, error: roleErr } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', userData.user.id);
+
+        if (roleErr) {
+          await signOut();
+          toast.error('Could not verify your role. Please contact an administrator.');
+          return;
+        }
+
+        const roles = (roleRows ?? []).map((r) => r.role);
+
+        if (!roles.includes(role)) {
+          await signOut();
+          toast.error(`This account is not a ${role}. Please choose the correct portal.`);
+          return;
+        }
+
         toast.success(`Welcome back, ${role}!`);
       }
     } finally {
