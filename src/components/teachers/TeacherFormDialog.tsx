@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -26,6 +26,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Teacher } from '@/types/database';
+import { ProfilePhotoUpload } from '@/components/common/ProfilePhotoUpload';
 
 const teacherSchema = z.object({
   teacher_id: z.string().min(1, 'Teacher ID is required').max(20),
@@ -37,6 +38,7 @@ const teacherSchema = z.object({
   qualification: z.string().max(100).optional().nullable(),
   hire_date: z.string(),
   status: z.string(),
+  avatar_url: z.string().optional().nullable(),
 });
 
 type TeacherFormValues = z.infer<typeof teacherSchema>;
@@ -54,6 +56,8 @@ export function TeacherFormDialog({
   teacher,
   onSubmit,
 }: TeacherFormDialogProps) {
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+
   const form = useForm<TeacherFormValues>({
     resolver: zodResolver(teacherSchema),
     defaultValues: {
@@ -66,8 +70,12 @@ export function TeacherFormDialog({
       qualification: '',
       hire_date: new Date().toISOString().split('T')[0],
       status: 'active',
+      avatar_url: null,
     },
   });
+
+  const firstName = form.watch('first_name');
+  const lastName = form.watch('last_name');
 
   useEffect(() => {
     if (teacher) {
@@ -81,7 +89,9 @@ export function TeacherFormDialog({
         qualification: teacher.qualification || '',
         hire_date: teacher.hire_date,
         status: teacher.status,
+        avatar_url: (teacher as any).avatar_url || null,
       });
+      setAvatarUrl((teacher as any).avatar_url || null);
     } else {
       form.reset({
         teacher_id: '',
@@ -93,7 +103,9 @@ export function TeacherFormDialog({
         qualification: '',
         hire_date: new Date().toISOString().split('T')[0],
         status: 'active',
+        avatar_url: null,
       });
+      setAvatarUrl(null);
     }
   }, [teacher, form, open]);
 
@@ -103,19 +115,31 @@ export function TeacherFormDialog({
       phone: data.phone || null,
       department: data.department || null,
       qualification: data.qualification || null,
+      avatar_url: avatarUrl,
     });
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {teacher ? 'Edit Teacher' : 'Add New Teacher'}
           </DialogTitle>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+            {/* Profile Photo */}
+            <div className="flex justify-center pb-4 border-b">
+              <ProfilePhotoUpload
+                currentUrl={avatarUrl}
+                onUpload={setAvatarUrl}
+                folder="teachers"
+                entityId={teacher?.id}
+                name={`${firstName} ${lastName}`.trim()}
+              />
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}

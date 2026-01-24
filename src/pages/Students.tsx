@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Edit, Trash2 } from 'lucide-react';
 import { StudentFormDialog } from '@/components/students/StudentFormDialog';
 import { DeleteConfirmDialog } from '@/components/common/DeleteConfirmDialog';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 export default function Students() {
   const { students, loading, createStudent, updateStudent, deleteStudent } = useStudents();
@@ -22,7 +23,17 @@ export default function Students() {
     },
     {
       header: 'Name',
-      accessor: (item: Student) => `${item.first_name} ${item.last_name}`,
+      accessor: (item: Student) => (
+        <div className="flex items-center gap-3">
+          <Avatar className="h-8 w-8">
+            <AvatarImage src={item.avatar_url || undefined} alt={`${item.first_name} ${item.last_name}`} />
+            <AvatarFallback className="text-xs bg-primary/10 text-primary">
+              {item.first_name[0]}{item.last_name[0]}
+            </AvatarFallback>
+          </Avatar>
+          <span>{item.first_name} {item.last_name}</span>
+        </div>
+      ),
     },
     {
       header: 'Email',
