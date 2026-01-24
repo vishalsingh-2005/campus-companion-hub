@@ -46,6 +46,7 @@ const teacherNavigation: NavItem[] = [
 
 const studentNavigation: NavItem[] = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+  { name: 'My Attendance', href: '/student/attendance', icon: CalendarCheck },
 ];
 
 export function Sidebar() {

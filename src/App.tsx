@@ -14,6 +14,7 @@ import Teachers from "./pages/Teachers";
 import Courses from "./pages/Courses";
 import Enrollments from "./pages/Enrollments";
 import StudentDashboard from "./pages/student/StudentDashboard";
+import MyAttendance from "./pages/student/MyAttendance";
 import TeacherDashboard from "./pages/teacher/TeacherDashboard";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import UserManagement from "./pages/admin/UserManagement";
@@ -146,6 +147,14 @@ const App = () => (
               element={
                 <ProtectedRoute allowedRoles={['student']}>
                   <StudentDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/student/attendance"
+              element={
+                <ProtectedRoute allowedRoles={['student']}>
+                  <MyAttendance />
                 </ProtectedRoute>
               }
             />
