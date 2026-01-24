@@ -28,6 +28,8 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { Student } from '@/types/database';
 import { ProfilePhotoUpload } from '@/components/common/ProfilePhotoUpload';
+import { UserLinkSelect } from '@/components/common/UserLinkSelect';
+import { Separator } from '@/components/ui/separator';
 
 const studentSchema = z.object({
   student_id: z.string().min(1, 'Student ID is required').max(20),
@@ -41,6 +43,7 @@ const studentSchema = z.object({
   enrollment_date: z.string(),
   status: z.string(),
   avatar_url: z.string().optional().nullable(),
+  user_id: z.string().optional().nullable(),
 });
 
 type StudentFormValues = z.infer<typeof studentSchema>;
@@ -59,6 +62,7 @@ export function StudentFormDialog({
   onSubmit,
 }: StudentFormDialogProps) {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
 
   const form = useForm<StudentFormValues>({
     resolver: zodResolver(studentSchema),
@@ -74,6 +78,7 @@ export function StudentFormDialog({
       enrollment_date: new Date().toISOString().split('T')[0],
       status: 'active',
       avatar_url: null,
+      user_id: null,
     },
   });
 
@@ -93,9 +98,11 @@ export function StudentFormDialog({
         address: student.address || '',
         enrollment_date: student.enrollment_date,
         status: student.status,
-        avatar_url: (student as any).avatar_url || null,
+        avatar_url: student.avatar_url || null,
+        user_id: student.user_id || null,
       });
-      setAvatarUrl((student as any).avatar_url || null);
+      setAvatarUrl(student.avatar_url || null);
+      setUserId(student.user_id || null);
     } else {
       form.reset({
         student_id: '',
@@ -109,8 +116,10 @@ export function StudentFormDialog({
         enrollment_date: new Date().toISOString().split('T')[0],
         status: 'active',
         avatar_url: null,
+        user_id: null,
       });
       setAvatarUrl(null);
+      setUserId(null);
     }
   }, [student, form, open]);
 
@@ -122,6 +131,7 @@ export function StudentFormDialog({
       gender: data.gender || null,
       address: data.address || null,
       avatar_url: avatarUrl,
+      user_id: userId,
     });
   };
 
@@ -301,6 +311,16 @@ export function StudentFormDialog({
                 </FormItem>
               )}
             />
+
+            {/* User Account Linking */}
+            <Separator />
+            <UserLinkSelect
+              type="student"
+              value={userId}
+              onChange={setUserId}
+              currentRecordId={student?.id}
+            />
+
             <div className="flex justify-end gap-3 pt-4">
               <Button
                 type="button"

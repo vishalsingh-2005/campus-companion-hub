@@ -5,10 +5,11 @@ import { DataTable } from '@/components/ui/data-table';
 import { useStudents } from '@/hooks/useStudents';
 import { Student } from '@/types/database';
 import { Button } from '@/components/ui/button';
-import { Edit, Trash2 } from 'lucide-react';
+import { Edit, Trash2, UserCheck, UserX } from 'lucide-react';
 import { StudentFormDialog } from '@/components/students/StudentFormDialog';
 import { DeleteConfirmDialog } from '@/components/common/DeleteConfirmDialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 export default function Students() {
   const { students, loading, createStudent, updateStudent, deleteStudent } = useStudents();
@@ -55,6 +56,35 @@ export default function Students() {
         >
           {item.status}
         </span>
+      ),
+    },
+    {
+      header: 'Account',
+      accessor: (item: Student) => (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex items-center justify-center">
+                {item.user_id ? (
+                  <div className="flex items-center gap-1.5 text-success">
+                    <UserCheck className="h-4 w-4" />
+                    <span className="text-xs font-medium">Linked</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1.5 text-muted-foreground">
+                    <UserX className="h-4 w-4" />
+                    <span className="text-xs">Not linked</span>
+                  </div>
+                )}
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              {item.user_id
+                ? 'This student can log in and view their data'
+                : 'No login account linked - student cannot access the portal'}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       ),
     },
   ];
