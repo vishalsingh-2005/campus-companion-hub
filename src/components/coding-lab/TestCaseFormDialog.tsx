@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -13,9 +13,27 @@ import { Switch } from '@/components/ui/switch';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 import { useLabTestCases, TestCase } from '@/hooks/useCodingLabs';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Plus, Trash2, Eye, EyeOff } from 'lucide-react';
+import {
+  Loader2,
+  Plus,
+  Trash2,
+  Eye,
+  EyeOff,
+  Upload,
+  FileJson,
+  FileSpreadsheet,
+  ChevronDown,
+  Download,
+  AlertCircle,
+  CheckCircle2,
+} from 'lucide-react';
 
 interface TestCaseFormDialogProps {
   open: boolean;
@@ -36,6 +54,17 @@ export function TestCaseFormDialog({
   );
 
   const [adding, setAdding] = useState(false);
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [importPreview, setImportPreview] = useState<Array<{
+    input: string;
+    expected_output: string;
+    is_sample: boolean;
+    weight: number;
+    description: string;
+  }>>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const [newTestCase, setNewTestCase] = useState({
     input: '',
     expected_output: '',
@@ -106,6 +135,177 @@ export function TestCaseFormDialog({
         description: error.message || 'Failed to delete test case',
         variant: 'destructive',
       });
+    }
+  };
+
+  // Parse CSV content
+  const parseCSV = (content: string) => {
+    const lines = content.trim().split('\n');
+    if (lines.length < 2) {
+      throw new Error('CSV must have a header row and at least one data row');
+    }
+
+    const header = lines[0].toLowerCase();
+    const hasHeader = header.includes('input') && header.includes('output');
+    const dataLines = hasHeader ? lines.slice(1) : lines;
+
+    return dataLines.map((line, index) => {
+      // Handle quoted CSV values
+      const values: string[] = [];
+      let current = '';
+      let inQuotes = false;
+
+      for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        if (char === '"') {
+          inQuotes = !inQuotes;
+        } else if (char === ',' && !inQuotes) {
+          values.push(current.trim());
+          current = '';
+        } else {
+          current += char;
+        }
+      }
+      values.push(current.trim());
+
+      if (values.length < 2) {
+        throw new Error(`Row ${index + 1}: Must have at least input and expected_output columns`);
+      }
+
+      return {
+        input: values[0] || '',
+        expected_output: values[1] || '',
+        is_sample: values[2]?.toLowerCase() === 'true' || values[2] === '1',
+        weight: parseInt(values[3]) || 1,
+        description: values[4] || '',
+      };
+    });
+  };
+
+  // Parse JSON content
+  const parseJSON = (content: string) => {
+    const data = JSON.parse(content);
+    const testCasesArray = Array.isArray(data) ? data : data.testCases || data.test_cases || [];
+
+    if (!Array.isArray(testCasesArray) || testCasesArray.length === 0) {
+      throw new Error('JSON must contain an array of test cases');
+    }
+
+    return testCasesArray.map((tc: any, index: number) => {
+      if (tc.input === undefined || tc.expected_output === undefined) {
+        throw new Error(`Test case ${index + 1}: Must have 'input' and 'expected_output' fields`);
+      }
+
+      return {
+        input: String(tc.input || ''),
+        expected_output: String(tc.expected_output || tc.expectedOutput || ''),
+        is_sample: Boolean(tc.is_sample || tc.isSample || tc.sample),
+        weight: parseInt(tc.weight) || 1,
+        description: String(tc.description || ''),
+      };
+    });
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const content = await file.text();
+      const isJSON = file.name.endsWith('.json') || content.trim().startsWith('[') || content.trim().startsWith('{');
+      
+      const parsed = isJSON ? parseJSON(content) : parseCSV(content);
+      setImportPreview(parsed);
+
+      toast({
+        title: 'File Parsed',
+        description: `Found ${parsed.length} test cases. Review and confirm import.`,
+      });
+    } catch (error: any) {
+      console.error('Parse error:', error);
+      toast({
+        title: 'Parse Error',
+        description: error.message || 'Failed to parse file',
+        variant: 'destructive',
+      });
+      setImportPreview([]);
+    }
+
+    // Reset file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleBulkImport = async () => {
+    if (importPreview.length === 0) return;
+
+    setImporting(true);
+    let successCount = 0;
+    let errorCount = 0;
+
+    try {
+      for (let i = 0; i < importPreview.length; i++) {
+        const tc = importPreview[i];
+        try {
+          await addTestCase({
+            lab_id: labId,
+            input: tc.input,
+            expected_output: tc.expected_output,
+            is_sample: tc.is_sample,
+            is_hidden: !tc.is_sample,
+            weight: tc.weight,
+            description: tc.description || null,
+            order_index: testCases.length + i,
+          });
+          successCount++;
+        } catch {
+          errorCount++;
+        }
+      }
+
+      toast({
+        title: 'Import Complete',
+        description: `Successfully imported ${successCount} test cases${errorCount > 0 ? `, ${errorCount} failed` : ''}`,
+      });
+
+      setImportPreview([]);
+      setBulkOpen(false);
+    } catch (error: any) {
+      toast({
+        title: 'Import Error',
+        description: error.message || 'Failed to import test cases',
+        variant: 'destructive',
+      });
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  const downloadTemplate = (format: 'csv' | 'json') => {
+    if (format === 'csv') {
+      const csv = `input,expected_output,is_sample,weight,description
+"1 2","3",false,1,"Addition test"
+"5 3","8",true,1,"Sample addition"`;
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'test_cases_template.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+    } else {
+      const json = JSON.stringify([
+        { input: "1 2", expected_output: "3", is_sample: false, weight: 1, description: "Addition test" },
+        { input: "5 3", expected_output: "8", is_sample: true, weight: 1, description: "Sample addition" }
+      ], null, 2);
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'test_cases_template.json';
+      a.click();
+      URL.revokeObjectURL(url);
     }
   };
 
@@ -220,6 +420,145 @@ export function TestCaseFormDialog({
               )}
             </CardContent>
           </Card>
+
+          {/* Bulk Import Section */}
+          <Collapsible open={bulkOpen} onOpenChange={setBulkOpen}>
+            <CollapsibleTrigger asChild>
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full justify-between"
+              >
+                <span className="flex items-center gap-2">
+                  <Upload className="h-4 w-4" />
+                  Bulk Import from CSV/JSON
+                </span>
+                <ChevronDown
+                  className={`h-4 w-4 transition-transform ${
+                    bulkOpen ? 'rotate-180' : ''
+                  }`}
+                />
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="pt-4">
+              <Card>
+                <CardContent className="p-4 space-y-4">
+                  {/* Download Templates */}
+                  <div className="flex items-center justify-between">
+                    <div className="text-sm text-muted-foreground">
+                      Download a template to get started:
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => downloadTemplate('csv')}
+                      >
+                        <FileSpreadsheet className="h-4 w-4 mr-1" />
+                        CSV
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => downloadTemplate('json')}
+                      >
+                        <FileJson className="h-4 w-4 mr-1" />
+                        JSON
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* File Upload */}
+                  <div className="space-y-2">
+                    <Label>Upload File</Label>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".csv,.json"
+                      onChange={handleFileUpload}
+                      className="hidden"
+                    />
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="w-full"
+                    >
+                      <Upload className="h-4 w-4 mr-2" />
+                      Select CSV or JSON File
+                    </Button>
+                  </div>
+
+                  {/* Preview */}
+                  {importPreview.length > 0 && (
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <Label className="flex items-center gap-2">
+                          <CheckCircle2 className="h-4 w-4 text-success" />
+                          Preview ({importPreview.length} test cases)
+                        </Label>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setImportPreview([])}
+                        >
+                          Clear
+                        </Button>
+                      </div>
+
+                      <ScrollArea className="h-[150px] border rounded-lg">
+                        <div className="p-2 space-y-2">
+                          {importPreview.map((tc, i) => (
+                            <div
+                              key={i}
+                              className="flex items-center gap-3 text-xs bg-muted/30 rounded p-2"
+                            >
+                              <span className="font-medium w-8">#{i + 1}</span>
+                              <div className="flex-1 truncate font-mono">
+                                In: {tc.input.substring(0, 30)}...
+                              </div>
+                              <div className="flex-1 truncate font-mono">
+                                Out: {tc.expected_output.substring(0, 30)}...
+                              </div>
+                              <Badge variant={tc.is_sample ? 'default' : 'outline'} className="text-xs">
+                                {tc.is_sample ? 'Sample' : 'Hidden'}
+                              </Badge>
+                            </div>
+                          ))}
+                        </div>
+                      </ScrollArea>
+
+                      <Button
+                        onClick={handleBulkImport}
+                        disabled={importing}
+                        className="w-full"
+                      >
+                        {importing ? (
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        ) : (
+                          <Plus className="h-4 w-4 mr-2" />
+                        )}
+                        Import {importPreview.length} Test Cases
+                      </Button>
+                    </div>
+                  )}
+
+                  {/* Format Help */}
+                  <div className="text-xs text-muted-foreground space-y-1">
+                    <p className="font-medium flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3" />
+                      Format Requirements:
+                    </p>
+                    <p><strong>CSV:</strong> input, expected_output, is_sample (true/false), weight, description</p>
+                    <p><strong>JSON:</strong> Array of objects with input, expected_output, is_sample, weight, description</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </CollapsibleContent>
+          </Collapsible>
 
           {/* Existing test cases */}
           {loading ? (
