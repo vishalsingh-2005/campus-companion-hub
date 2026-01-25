@@ -185,16 +185,16 @@ export function CodingLabFormDialog({
           <div className="space-y-2">
             <Label htmlFor="course">Course (Optional)</Label>
             <Select
-              value={formData.course_id}
+              value={formData.course_id || "none"}
               onValueChange={(value) =>
-                setFormData({ ...formData, course_id: value })
+                setFormData({ ...formData, course_id: value === "none" ? "" : value })
               }
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select course" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">No course</SelectItem>
+                <SelectItem value="none">No course</SelectItem>
                 {courses.map((course) => (
                   <SelectItem key={course.id} value={course.id}>
                     {course.course_code} - {course.course_name}
