@@ -34,6 +34,7 @@ const adminNavigation: NavItem[] = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Students', href: '/students', icon: GraduationCap, roles: ['admin'] },
   { name: 'Teachers', href: '/teachers', icon: Users, roles: ['admin'] },
+  { name: 'Event Organizers', href: '/admin/organizers', icon: Calendar, roles: ['admin'] },
   { name: 'Courses', href: '/courses', icon: BookOpen, roles: ['admin'] },
   { name: 'Enrollments', href: '/enrollments', icon: ClipboardList, roles: ['admin'] },
   { name: 'Live Sessions', href: '/live-sessions', icon: Video, roles: ['admin'] },
