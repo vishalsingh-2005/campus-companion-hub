@@ -145,6 +145,301 @@ export type Database = {
         }
         Relationships: []
       }
+      coding_lab_activity_logs: {
+        Row: {
+          action: string
+          created_at: string
+          details: Json | null
+          id: string
+          ip_address: string | null
+          lab_id: string | null
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          ip_address?: string | null
+          lab_id?: string | null
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          ip_address?: string | null
+          lab_id?: string | null
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coding_lab_activity_logs_lab_id_fkey"
+            columns: ["lab_id"]
+            isOneToOne: false
+            referencedRelation: "coding_labs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coding_lab_plagiarism: {
+        Row: {
+          detected_at: string
+          flagged: boolean
+          id: string
+          lab_id: string
+          matching_lines: number | null
+          review_notes: string | null
+          reviewed_by: string | null
+          similarity_score: number
+          submission_1_id: string
+          submission_2_id: string
+        }
+        Insert: {
+          detected_at?: string
+          flagged?: boolean
+          id?: string
+          lab_id: string
+          matching_lines?: number | null
+          review_notes?: string | null
+          reviewed_by?: string | null
+          similarity_score: number
+          submission_1_id: string
+          submission_2_id: string
+        }
+        Update: {
+          detected_at?: string
+          flagged?: boolean
+          id?: string
+          lab_id?: string
+          matching_lines?: number | null
+          review_notes?: string | null
+          reviewed_by?: string | null
+          similarity_score?: number
+          submission_1_id?: string
+          submission_2_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coding_lab_plagiarism_lab_id_fkey"
+            columns: ["lab_id"]
+            isOneToOne: false
+            referencedRelation: "coding_labs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coding_lab_plagiarism_submission_1_id_fkey"
+            columns: ["submission_1_id"]
+            isOneToOne: false
+            referencedRelation: "coding_lab_submissions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coding_lab_plagiarism_submission_2_id_fkey"
+            columns: ["submission_2_id"]
+            isOneToOne: false
+            referencedRelation: "coding_lab_submissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coding_lab_submissions: {
+        Row: {
+          compile_output: string | null
+          created_at: string
+          evaluated_at: string | null
+          execution_time_ms: number | null
+          id: string
+          judge0_token: string | null
+          lab_id: string
+          language: string
+          max_score: number | null
+          memory_used_kb: number | null
+          passed_test_cases: number | null
+          score: number | null
+          source_code: string
+          status: string
+          stderr: string | null
+          student_id: string
+          submitted_at: string
+          test_results: Json | null
+          total_test_cases: number | null
+        }
+        Insert: {
+          compile_output?: string | null
+          created_at?: string
+          evaluated_at?: string | null
+          execution_time_ms?: number | null
+          id?: string
+          judge0_token?: string | null
+          lab_id: string
+          language: string
+          max_score?: number | null
+          memory_used_kb?: number | null
+          passed_test_cases?: number | null
+          score?: number | null
+          source_code: string
+          status?: string
+          stderr?: string | null
+          student_id: string
+          submitted_at?: string
+          test_results?: Json | null
+          total_test_cases?: number | null
+        }
+        Update: {
+          compile_output?: string | null
+          created_at?: string
+          evaluated_at?: string | null
+          execution_time_ms?: number | null
+          id?: string
+          judge0_token?: string | null
+          lab_id?: string
+          language?: string
+          max_score?: number | null
+          memory_used_kb?: number | null
+          passed_test_cases?: number | null
+          score?: number | null
+          source_code?: string
+          status?: string
+          stderr?: string | null
+          student_id?: string
+          submitted_at?: string
+          test_results?: Json | null
+          total_test_cases?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coding_lab_submissions_lab_id_fkey"
+            columns: ["lab_id"]
+            isOneToOne: false
+            referencedRelation: "coding_labs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coding_lab_submissions_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coding_lab_test_cases: {
+        Row: {
+          created_at: string
+          description: string | null
+          expected_output: string
+          id: string
+          input: string
+          is_hidden: boolean
+          is_sample: boolean
+          lab_id: string
+          order_index: number
+          weight: number
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          expected_output: string
+          id?: string
+          input: string
+          is_hidden?: boolean
+          is_sample?: boolean
+          lab_id: string
+          order_index?: number
+          weight?: number
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          expected_output?: string
+          id?: string
+          input?: string
+          is_hidden?: boolean
+          is_sample?: boolean
+          lab_id?: string
+          order_index?: number
+          weight?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coding_lab_test_cases_lab_id_fkey"
+            columns: ["lab_id"]
+            isOneToOne: false
+            referencedRelation: "coding_labs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coding_labs: {
+        Row: {
+          allowed_languages: string[]
+          course_id: string | null
+          created_at: string
+          created_by: string | null
+          description: string
+          difficulty: string
+          end_date: string | null
+          id: string
+          is_enabled: boolean
+          memory_limit_mb: number
+          start_date: string | null
+          starter_code: Json | null
+          status: string
+          time_limit_seconds: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          allowed_languages?: string[]
+          course_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description: string
+          difficulty?: string
+          end_date?: string | null
+          id?: string
+          is_enabled?: boolean
+          memory_limit_mb?: number
+          start_date?: string | null
+          starter_code?: Json | null
+          status?: string
+          time_limit_seconds?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          allowed_languages?: string[]
+          course_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          difficulty?: string
+          end_date?: string | null
+          id?: string
+          is_enabled?: boolean
+          memory_limit_mb?: number
+          start_date?: string | null
+          starter_code?: Json | null
+          status?: string
+          time_limit_seconds?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coding_labs_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       course_enrollments: {
         Row: {
           course_id: string
