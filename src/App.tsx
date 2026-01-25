@@ -27,7 +27,10 @@ import MyAttendance from "./pages/student/MyAttendance";
 import TeacherDashboard from "./pages/teacher/TeacherDashboard";
 import TeacherProfile from "./pages/teacher/TeacherProfile";
 import TeacherTests from "./pages/teacher/TeacherTests";
+import TeacherCodingLabs from "./pages/teacher/TeacherCodingLabs";
 import TakeTest from "./pages/student/TakeTest";
+import CodingLabs from "./pages/student/CodingLabs";
+import CodingLabEditor from "./pages/student/CodingLabEditor";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import UserManagement from "./pages/admin/UserManagement";
 import Reports from "./pages/admin/Reports";
@@ -301,6 +304,30 @@ const App = () => (
               element={
                 <ProtectedRoute allowedRoles={['student']}>
                   <TakeTest />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/student/coding-labs"
+              element={
+                <ProtectedRoute allowedRoles={['student']}>
+                  <CodingLabs />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/student/coding-lab/:labId"
+              element={
+                <ProtectedRoute allowedRoles={['student']}>
+                  <CodingLabEditor />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/teacher/coding-labs"
+              element={
+                <ProtectedRoute allowedRoles={['teacher']}>
+                  <TeacherCodingLabs />
                 </ProtectedRoute>
               }
             />

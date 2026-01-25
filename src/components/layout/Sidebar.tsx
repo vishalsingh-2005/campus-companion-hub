@@ -44,10 +44,13 @@ const adminNavigation: NavItem[] = [
   { name: 'User Accounts', href: '/admin/users', icon: UserPlus, roles: ['admin'] },
 ];
 
+import { Code2 } from 'lucide-react';
+
 const teacherNavigation: NavItem[] = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'My Profile', href: '/teacher/profile', icon: User },
   { name: 'Test Management', href: '/teacher/tests', icon: ClipboardList },
+  { name: 'Coding Labs', href: '/teacher/coding-labs', icon: Code2 },
   { name: 'Live Sessions', href: '/live-sessions', icon: Video },
   { name: 'Secure Attendance', href: '/secure-attendance', icon: Shield },
   { name: 'Schedules', href: '/schedules', icon: CalendarDays },
@@ -65,6 +68,7 @@ const studentNavigation: NavItem[] = [
   { name: 'My Courses', href: '/student/courses', icon: BookOpen },
   { name: 'Syllabus', href: '/student/syllabus', icon: FileText },
   { name: 'Tests & Exams', href: '/student/tests', icon: ClipboardCheck },
+  { name: 'Coding Labs', href: '/student/coding-labs', icon: Code2 },
   { name: 'My Attendance', href: '/student/attendance', icon: CalendarCheck },
   { name: 'Mark Attendance', href: '/student/mark-attendance', icon: Shield },
   { name: 'My Schedule', href: '/student/schedule', icon: CalendarDays },
