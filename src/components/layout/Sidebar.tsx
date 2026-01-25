@@ -13,6 +13,7 @@ import {
   User,
   ShieldAlert,
   Video,
+  MapPin,
 } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -35,6 +36,7 @@ const adminNavigation: NavItem[] = [
   { name: 'Enrollments', href: '/enrollments', icon: ClipboardList, roles: ['admin'] },
   { name: 'Live Sessions', href: '/live-sessions', icon: Video, roles: ['admin'] },
   { name: 'Schedules', href: '/schedules', icon: CalendarDays, roles: ['admin'] },
+  { name: 'Locations', href: '/admin/locations', icon: MapPin, roles: ['admin'] },
   { name: 'Secure Attendance', href: '/secure-attendance', icon: Shield, roles: ['admin'] },
   { name: 'Attendance', href: '/attendance', icon: CalendarCheck, roles: ['admin'] },
   { name: 'Proxy Monitoring', href: '/admin/proxy-monitoring', icon: ShieldAlert, roles: ['admin'] },
