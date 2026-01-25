@@ -17,11 +17,22 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@/components/ui/tabs';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { useCodingLabs, CodingLab } from '@/hooks/useCodingLabs';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Code2, ChevronDown } from 'lucide-react';
 
 interface Course {
   id: string;
@@ -37,11 +48,45 @@ interface CodingLabFormDialogProps {
 }
 
 const LANGUAGES = [
-  { value: 'c', label: 'C' },
-  { value: 'cpp', label: 'C++' },
-  { value: 'java', label: 'Java' },
-  { value: 'python', label: 'Python' },
+  { value: 'c', label: 'C', extension: 'c' },
+  { value: 'cpp', label: 'C++', extension: 'cpp' },
+  { value: 'java', label: 'Java', extension: 'java' },
+  { value: 'python', label: 'Python', extension: 'py' },
 ];
+
+const DEFAULT_TEMPLATES: Record<string, string> = {
+  c: `#include <stdio.h>
+
+int main() {
+    // Your code here
+    
+    return 0;
+}`,
+  cpp: `#include <iostream>
+using namespace std;
+
+int main() {
+    // Your code here
+    
+    return 0;
+}`,
+  java: `import java.util.*;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        // Your code here
+        
+    }
+}`,
+  python: `# Your code here
+
+def main():
+    pass
+
+if __name__ == "__main__":
+    main()`,
+};
 
 export function CodingLabFormDialog({
   open,
@@ -54,6 +99,8 @@ export function CodingLabFormDialog({
   const { createLab, updateLab } = useCodingLabs();
   const [loading, setLoading] = useState(false);
   const [courses, setCourses] = useState<Course[]>([]);
+  const [starterCodeOpen, setStarterCodeOpen] = useState(false);
+  const [starterCode, setStarterCode] = useState<Record<string, string>>({});
 
   const [formData, setFormData] = useState({
     title: '',
@@ -103,6 +150,8 @@ export function CodingLabFormDialog({
         start_date: lab.start_date ? lab.start_date.split('T')[0] : '',
         end_date: lab.end_date ? lab.end_date.split('T')[0] : '',
       });
+      // Load existing starter code
+      setStarterCode(lab.starter_code || {});
     } else {
       setFormData({
         title: '',
@@ -115,6 +164,7 @@ export function CodingLabFormDialog({
         start_date: '',
         end_date: '',
       });
+      setStarterCode({});
     }
   }, [lab, open, courses]);
 
@@ -124,6 +174,20 @@ export function CodingLabFormDialog({
       allowed_languages: prev.allowed_languages.includes(lang)
         ? prev.allowed_languages.filter((l) => l !== lang)
         : [...prev.allowed_languages, lang],
+    }));
+  };
+
+  const handleStarterCodeChange = (lang: string, code: string) => {
+    setStarterCode((prev) => ({
+      ...prev,
+      [lang]: code,
+    }));
+  };
+
+  const applyDefaultTemplate = (lang: string) => {
+    setStarterCode((prev) => ({
+      ...prev,
+      [lang]: DEFAULT_TEMPLATES[lang] || '',
     }));
   };
 
@@ -145,7 +209,7 @@ export function CodingLabFormDialog({
         created_by: user?.id,
         status: 'draft' as const,
         is_enabled: true,
-        starter_code: {},
+        starter_code: starterCode,
         updated_at: new Date().toISOString(),
       };
 
@@ -334,6 +398,83 @@ export function CodingLabFormDialog({
               />
             </div>
           </div>
+
+          {/* Starter Code Section */}
+          <Collapsible open={starterCodeOpen} onOpenChange={setStarterCodeOpen}>
+            <CollapsibleTrigger asChild>
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full justify-between"
+              >
+                <span className="flex items-center gap-2">
+                  <Code2 className="h-4 w-4" />
+                  Starter Code Templates
+                </span>
+                <ChevronDown
+                  className={`h-4 w-4 transition-transform ${
+                    starterCodeOpen ? 'rotate-180' : ''
+                  }`}
+                />
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="pt-4">
+              {formData.allowed_languages.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  Select at least one language above to add starter code
+                </p>
+              ) : (
+                <Tabs
+                  defaultValue={formData.allowed_languages[0]}
+                  className="w-full"
+                >
+                  <TabsList className="w-full">
+                    {formData.allowed_languages.map((lang) => {
+                      const langInfo = LANGUAGES.find((l) => l.value === lang);
+                      return (
+                        <TabsTrigger key={lang} value={lang} className="flex-1">
+                          {langInfo?.label || lang}
+                        </TabsTrigger>
+                      );
+                    })}
+                  </TabsList>
+                  {formData.allowed_languages.map((lang) => {
+                    const langInfo = LANGUAGES.find((l) => l.value === lang);
+                    return (
+                      <TabsContent key={lang} value={lang} className="mt-4">
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <Label>
+                              {langInfo?.label} Starter Code (.{langInfo?.extension})
+                            </Label>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => applyDefaultTemplate(lang)}
+                            >
+                              Use Default Template
+                            </Button>
+                          </div>
+                          <Textarea
+                            value={starterCode[lang] || ''}
+                            onChange={(e) =>
+                              handleStarterCodeChange(lang, e.target.value)
+                            }
+                            placeholder={`// Enter starter code for ${langInfo?.label}...`}
+                            className="font-mono text-sm min-h-[200px]"
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            This code will be pre-filled when students start the lab
+                          </p>
+                        </div>
+                      </TabsContent>
+                    );
+                  })}
+                </Tabs>
+              )}
+            </CollapsibleContent>
+          </Collapsible>
 
           <div className="flex justify-end gap-3 pt-4">
             <Button
