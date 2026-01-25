@@ -47,6 +47,7 @@ const adminNavigation: NavItem[] = [
 const teacherNavigation: NavItem[] = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'My Profile', href: '/teacher/profile', icon: User },
+  { name: 'Test Management', href: '/teacher/tests', icon: ClipboardList },
   { name: 'Live Sessions', href: '/live-sessions', icon: Video },
   { name: 'Secure Attendance', href: '/secure-attendance', icon: Shield },
   { name: 'Schedules', href: '/schedules', icon: CalendarDays },

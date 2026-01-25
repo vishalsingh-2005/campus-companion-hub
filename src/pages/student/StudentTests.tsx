@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { PageHeader } from '@/components/ui/page-header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { StatCard } from '@/components/ui/stat-card';
@@ -49,6 +51,7 @@ interface TestResult {
 }
 
 export default function StudentTests() {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [tests, setTests] = useState<Test[]>([]);
@@ -294,6 +297,15 @@ export default function StudentTests() {
                             <Target className="h-4 w-4" />
                             <span>{test.total_marks} marks • {test.duration_minutes} min</span>
                           </div>
+                          {test.status === 'active' && (
+                            <Button
+                              size="sm"
+                              className="mt-3"
+                              onClick={() => navigate(`/student/take-test/${test.id}`)}
+                            >
+                              Take Test
+                            </Button>
+                          )}
                         </div>
                       </div>
                     </CardContent>
