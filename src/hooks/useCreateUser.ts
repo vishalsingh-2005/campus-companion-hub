@@ -19,7 +19,7 @@ export function useCreateUser() {
 
     try {
       // Use admin edge function to create user without affecting current session
-      const { data, error } = await supabase.functions.invoke('admin-create-user', {
+      const response = await supabase.functions.invoke('admin-create-user', {
         body: {
           email,
           password,
@@ -28,13 +28,18 @@ export function useCreateUser() {
         },
       });
 
-      if (error) {
-        throw new Error(error.message || 'Failed to create user');
+      // Handle edge function errors - the error details are in response.data when status is non-2xx
+      if (response.error) {
+        // Try to extract the actual error message from the response data
+        const errorMessage = response.data?.error || response.error.message || 'Failed to create user';
+        throw new Error(errorMessage);
       }
 
-      if (data?.error) {
-        throw new Error(data.error);
+      if (response.data?.error) {
+        throw new Error(response.data.error);
       }
+
+      const data = response.data;
 
       if (!data?.user_id) {
         throw new Error('Failed to create user account');
