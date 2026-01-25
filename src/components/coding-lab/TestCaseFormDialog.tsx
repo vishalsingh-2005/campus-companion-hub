@@ -33,6 +33,7 @@ import {
   Download,
   AlertCircle,
   CheckCircle2,
+  GripVertical,
 } from 'lucide-react';
 
 interface TestCaseFormDialogProps {
@@ -49,13 +50,16 @@ export function TestCaseFormDialog({
   labTitle,
 }: TestCaseFormDialogProps) {
   const { toast } = useToast();
-  const { testCases, loading, addTestCase, deleteTestCase } = useLabTestCases(
+  const { testCases, loading, addTestCase, deleteTestCase, updateTestCase } = useLabTestCases(
     open ? labId : null
   );
 
   const [adding, setAdding] = useState(false);
   const [bulkOpen, setBulkOpen] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [draggedId, setDraggedId] = useState<string | null>(null);
+  const [dragOverId, setDragOverId] = useState<string | null>(null);
+  const [reordering, setReordering] = useState(false);
   const [importPreview, setImportPreview] = useState<Array<{
     input: string;
     expected_output: string;
@@ -359,6 +363,76 @@ export function TestCaseFormDialog({
     });
   };
 
+  const handleDragStart = (e: React.DragEvent, id: string) => {
+    setDraggedId(id);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e: React.DragEvent, id: string) => {
+    e.preventDefault();
+    if (draggedId && draggedId !== id) {
+      setDragOverId(id);
+    }
+  };
+
+  const handleDragLeave = () => {
+    setDragOverId(null);
+  };
+
+  const handleDrop = async (e: React.DragEvent, targetId: string) => {
+    e.preventDefault();
+    if (!draggedId || draggedId === targetId) {
+      setDraggedId(null);
+      setDragOverId(null);
+      return;
+    }
+
+    setReordering(true);
+    try {
+      const draggedIndex = testCases.findIndex((tc) => tc.id === draggedId);
+      const targetIndex = testCases.findIndex((tc) => tc.id === targetId);
+
+      if (draggedIndex === -1 || targetIndex === -1) return;
+
+      // Create new order
+      const newOrder = [...testCases];
+      const [draggedItem] = newOrder.splice(draggedIndex, 1);
+      newOrder.splice(targetIndex, 0, draggedItem);
+
+      // Update order_index for all affected items
+      const updates = newOrder.map((tc, index) => ({
+        id: tc.id,
+        order_index: index,
+      }));
+
+      // Update each test case's order_index
+      for (const update of updates) {
+        await updateTestCase(update.id, { order_index: update.order_index });
+      }
+
+      toast({
+        title: 'Reordered',
+        description: 'Test case order updated successfully',
+      });
+    } catch (error) {
+      console.error('Error reordering test cases:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to reorder test cases',
+        variant: 'destructive',
+      });
+    } finally {
+      setDraggedId(null);
+      setDragOverId(null);
+      setReordering(false);
+    }
+  };
+
+  const handleDragEnd = () => {
+    setDraggedId(null);
+    setDragOverId(null);
+  };
+
   const sampleCount = testCases.filter((tc) => tc.is_sample).length;
   const hiddenCount = testCases.filter((tc) => !tc.is_sample).length;
 
@@ -640,9 +714,10 @@ export function TestCaseFormDialog({
           )}
 
           {/* Existing test cases */}
-          {loading ? (
+          {loading || reordering ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              {reordering && <span className="ml-2 text-sm text-muted-foreground">Reordering...</span>}
             </div>
           ) : testCases.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
@@ -651,10 +726,32 @@ export function TestCaseFormDialog({
           ) : (
             <ScrollArea className="h-[300px]">
               <div className="space-y-3 pr-4">
+                {testCases.length > 1 && (
+                  <div className="text-xs text-muted-foreground flex items-center gap-1 mb-2">
+                    <GripVertical className="h-3 w-3" />
+                    Drag to reorder test cases
+                  </div>
+                )}
                 {testCases.map((tc, index) => (
-                  <Card key={tc.id}>
+                  <Card
+                    key={tc.id}
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, tc.id)}
+                    onDragOver={(e) => handleDragOver(e, tc.id)}
+                    onDragLeave={handleDragLeave}
+                    onDrop={(e) => handleDrop(e, tc.id)}
+                    onDragEnd={handleDragEnd}
+                    className={`transition-all cursor-move ${
+                      draggedId === tc.id ? 'opacity-50 scale-95' : ''
+                    } ${
+                      dragOverId === tc.id ? 'border-primary border-2 shadow-lg' : ''
+                    }`}
+                  >
                     <CardContent className="p-3">
-                      <div className="flex items-start justify-between gap-4">
+                      <div className="flex items-start gap-2">
+                        <div className="flex items-center justify-center h-full pt-1 cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground">
+                          <GripVertical className="h-5 w-5" />
+                        </div>
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-2">
                             <span className="font-medium text-sm">
