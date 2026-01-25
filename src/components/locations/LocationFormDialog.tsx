@@ -65,17 +65,10 @@ export function LocationFormDialog({
     },
   });
 
+  // Auto-detect location when opening form for new location
   useEffect(() => {
-    if (location) {
-      form.reset({
-        name: location.name,
-        building: location.building || '',
-        room_number: location.room_number || '',
-        latitude: Number(location.latitude),
-        longitude: Number(location.longitude),
-        radius_meters: location.radius_meters,
-      });
-    } else {
+    if (open && !location) {
+      // Reset form first
       form.reset({
         name: '',
         building: '',
@@ -84,8 +77,35 @@ export function LocationFormDialog({
         longitude: 0,
         radius_meters: 50,
       });
+      
+      // Auto-detect current location
+      if (navigator.geolocation) {
+        setIsGettingLocation(true);
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            form.setValue('latitude', position.coords.latitude);
+            form.setValue('longitude', position.coords.longitude);
+            toast.success('Current location detected');
+            setIsGettingLocation(false);
+          },
+          (error) => {
+            console.log('Auto-location detection failed:', error.message);
+            setIsGettingLocation(false);
+          },
+          { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+        );
+      }
+    } else if (location) {
+      form.reset({
+        name: location.name,
+        building: location.building || '',
+        room_number: location.room_number || '',
+        latitude: Number(location.latitude),
+        longitude: Number(location.longitude),
+        radius_meters: location.radius_meters,
+      });
     }
-  }, [location, form]);
+  }, [open, location, form]);
 
   const handleGetCurrentLocation = async () => {
     if (!navigator.geolocation) {
