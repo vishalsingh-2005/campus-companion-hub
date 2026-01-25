@@ -28,7 +28,7 @@ interface NavItem {
   roles?: ('admin' | 'teacher' | 'student' | 'event_organizer')[];
 }
 
-import { Code2, Calendar, Ticket, Megaphone, BarChart3 as ChartBar, UserCheck } from 'lucide-react';
+import { Code2, Calendar, Megaphone, BarChart3 as ChartBar, UserCheck, Ticket } from 'lucide-react';
 
 const adminNavigation: NavItem[] = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -64,6 +64,8 @@ import { Settings, User as UserIcon, Bell } from 'lucide-react';
 
 import { FileText, ClipboardCheck } from 'lucide-react';
 
+
+
 const studentNavigation: NavItem[] = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'My Profile', href: '/student/profile', icon: UserIcon },
@@ -74,6 +76,7 @@ const studentNavigation: NavItem[] = [
   { name: 'My Attendance', href: '/student/attendance', icon: CalendarCheck },
   { name: 'Mark Attendance', href: '/student/mark-attendance', icon: Shield },
   { name: 'My Schedule', href: '/student/schedule', icon: CalendarDays },
+  { name: 'Events', href: '/student/events', icon: Ticket },
   { name: 'Live Classes', href: '/live-sessions', icon: Video },
   { name: 'Notices', href: '/student/notices', icon: Bell },
   { name: 'Settings', href: '/student/settings', icon: Settings },

@@ -32,6 +32,7 @@ import TeacherCodingLabs from "./pages/teacher/TeacherCodingLabs";
 import TakeTest from "./pages/student/TakeTest";
 import CodingLabs from "./pages/student/CodingLabs";
 import CodingLabEditor from "./pages/student/CodingLabEditor";
+import StudentEvents from "./pages/student/StudentEvents";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import UserManagement from "./pages/admin/UserManagement";
 import Reports from "./pages/admin/Reports";
@@ -352,6 +353,14 @@ const App = () => (
               element={
                 <ProtectedRoute allowedRoles={['student']}>
                   <CodingLabEditor />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/student/events"
+              element={
+                <ProtectedRoute allowedRoles={['student']}>
+                  <StudentEvents />
                 </ProtectedRoute>
               }
             />
