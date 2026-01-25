@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { Analytics } from "@vercel/analytics/react";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import AccessDenied from "./pages/AccessDenied";
@@ -419,6 +420,7 @@ const App = () => (
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
+        <Analytics />
       </TooltipProvider>
     </AuthProvider>
   </ThemeProvider>
