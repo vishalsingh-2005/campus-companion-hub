@@ -12,6 +12,7 @@ import { Loader2 } from 'lucide-react';
 // Import role-specific dashboard content
 import StudentDashboard from './student/StudentDashboard';
 import TeacherDashboard from './teacher/TeacherDashboard';
+import OrganizerDashboard from './organizer/OrganizerDashboard';
 
 interface DashboardStats {
   totalStudents: number;
@@ -23,7 +24,7 @@ interface DashboardStats {
 }
 
 export default function Dashboard() {
-  const { role, isLoading: roleLoading, isAdmin, isTeacher, isStudent } = useUserRole();
+  const { role, isLoading: roleLoading, isAdmin, isTeacher, isStudent, isEventOrganizer } = useUserRole();
   const [stats, setStats] = useState<DashboardStats>({
     totalStudents: 0,
     totalTeachers: 0,
@@ -110,6 +111,14 @@ export default function Dashboard() {
     return (
       <DashboardLayout>
         <TeacherDashboard />
+      </DashboardLayout>
+    );
+  }
+
+  if (isEventOrganizer) {
+    return (
+      <DashboardLayout>
+        <OrganizerDashboard />
       </DashboardLayout>
     );
   }

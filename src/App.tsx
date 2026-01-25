@@ -38,6 +38,7 @@ import Reports from "./pages/admin/Reports";
 import ProxyMonitoring from "./pages/admin/ProxyMonitoring";
 import ClassroomLocations from "./pages/admin/ClassroomLocations";
 import CodingLabAnalytics from "./pages/admin/CodingLabAnalytics";
+import OrganizerDashboard from "./pages/organizer/OrganizerDashboard";
 import Attendance from "./pages/Attendance";
 import AttendanceReports from "./pages/AttendanceReports";
 import SecureAttendance from "./pages/SecureAttendance";
@@ -346,6 +347,16 @@ const App = () => (
               element={
                 <ProtectedRoute allowedRoles={['teacher']}>
                   <TeacherCodingLabs />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Event Organizer routes */}
+            <Route
+              path="/organizer/dashboard"
+              element={
+                <ProtectedRoute allowedRoles={['event_organizer']}>
+                  <OrganizerDashboard />
                 </ProtectedRoute>
               }
             />

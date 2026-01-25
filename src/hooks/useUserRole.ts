@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
-export type AppRole = 'admin' | 'teacher' | 'student' | 'user';
+export type AppRole = 'admin' | 'teacher' | 'student' | 'event_organizer' | 'user';
 
 interface UserRoleData {
   role: AppRole;
@@ -10,6 +10,7 @@ interface UserRoleData {
   isAdmin: boolean;
   isTeacher: boolean;
   isStudent: boolean;
+  isEventOrganizer: boolean;
   refetch: () => Promise<void>;
 }
 
@@ -66,6 +67,7 @@ export function useUserRole(): UserRoleData {
     isAdmin: role === 'admin',
     isTeacher: role === 'teacher',
     isStudent: role === 'student',
+    isEventOrganizer: role === 'event_organizer',
     refetch: fetchRole,
   };
 }

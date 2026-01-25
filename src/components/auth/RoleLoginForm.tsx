@@ -15,7 +15,7 @@ const loginSchema = z.object({
 });
 
 interface RoleLoginFormProps {
-  role: 'admin' | 'teacher' | 'student';
+  role: 'admin' | 'teacher' | 'student' | 'event_organizer';
   onBack: () => void;
   illustration: React.ReactNode;
   gradient: string;
@@ -190,6 +190,8 @@ export function RoleLoginForm({
           <p className="mt-8 text-center text-sm text-muted-foreground">
             {role === 'admin' 
               ? 'Contact system administrator for access'
+              : role === 'event_organizer'
+              ? 'Contact admin to get event organizer access'
               : 'Your account was created by the administrator'}
           </p>
         </div>

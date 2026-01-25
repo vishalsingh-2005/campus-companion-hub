@@ -25,10 +25,10 @@ interface NavItem {
   name: string;
   href: string;
   icon: React.ComponentType<{ className?: string }>;
-  roles?: ('admin' | 'teacher' | 'student')[];
+  roles?: ('admin' | 'teacher' | 'student' | 'event_organizer')[];
 }
 
-import { Code2 } from 'lucide-react';
+import { Code2, Calendar, Ticket } from 'lucide-react';
 
 const adminNavigation: NavItem[] = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -78,11 +78,18 @@ const studentNavigation: NavItem[] = [
   { name: 'Settings', href: '/student/settings', icon: Settings },
 ];
 
+const organizerNavigation: NavItem[] = [
+  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+  { name: 'My Events', href: '/organizer/events', icon: Calendar },
+  { name: 'Registrations', href: '/organizer/registrations', icon: Ticket },
+  { name: 'Live Sessions', href: '/live-sessions', icon: Video },
+];
+
 export function Sidebar() {
   const location = useLocation();
   const navigate = useNavigate();
   const { signOut, user } = useAuth();
-  const { role, isAdmin, isTeacher, isStudent } = useUserRole();
+  const { role, isAdmin, isTeacher, isStudent, isEventOrganizer } = useUserRole();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleSignOut = async () => {
@@ -95,6 +102,7 @@ export function Sidebar() {
     if (isAdmin) return adminNavigation;
     if (isTeacher) return teacherNavigation;
     if (isStudent) return studentNavigation;
+    if (isEventOrganizer) return organizerNavigation;
     return [{ name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard }];
   };
 
