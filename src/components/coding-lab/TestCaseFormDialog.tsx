@@ -309,6 +309,56 @@ export function TestCaseFormDialog({
     }
   };
 
+  const exportTestCases = (format: 'csv' | 'json') => {
+    if (testCases.length === 0) {
+      toast({
+        title: 'No Test Cases',
+        description: 'There are no test cases to export',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (format === 'csv') {
+      const header = 'input,expected_output,is_sample,weight,description';
+      const rows = testCases.map((tc) => {
+        const input = `"${tc.input.replace(/"/g, '""')}"`;
+        const output = `"${tc.expected_output.replace(/"/g, '""')}"`;
+        const description = `"${(tc.description || '').replace(/"/g, '""')}"`;
+        return `${input},${output},${tc.is_sample},${tc.weight},${description}`;
+      });
+      const csv = [header, ...rows].join('\n');
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${labTitle.replace(/\s+/g, '_')}_test_cases.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } else {
+      const exportData = testCases.map((tc) => ({
+        input: tc.input,
+        expected_output: tc.expected_output,
+        is_sample: tc.is_sample,
+        weight: tc.weight,
+        description: tc.description || '',
+      }));
+      const json = JSON.stringify(exportData, null, 2);
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${labTitle.replace(/\s+/g, '_')}_test_cases.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    toast({
+      title: 'Export Successful',
+      description: `Exported ${testCases.length} test cases as ${format.toUpperCase()}`,
+    });
+  };
+
   const sampleCount = testCases.filter((tc) => tc.is_sample).length;
   const hiddenCount = testCases.filter((tc) => !tc.is_sample).length;
 
@@ -559,6 +609,35 @@ export function TestCaseFormDialog({
               </Card>
             </CollapsibleContent>
           </Collapsible>
+
+          {/* Export Section */}
+          {testCases.length > 0 && (
+            <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+              <div className="text-sm text-muted-foreground">
+                Export {testCases.length} test cases for backup or sharing
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => exportTestCases('csv')}
+                >
+                  <Download className="h-4 w-4 mr-1" />
+                  CSV
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => exportTestCases('json')}
+                >
+                  <Download className="h-4 w-4 mr-1" />
+                  JSON
+                </Button>
+              </div>
+            </div>
+          )}
 
           {/* Existing test cases */}
           {loading ? (
