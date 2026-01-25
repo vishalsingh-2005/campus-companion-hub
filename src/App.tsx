@@ -27,6 +27,7 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import UserManagement from "./pages/admin/UserManagement";
 import Reports from "./pages/admin/Reports";
 import ProxyMonitoring from "./pages/admin/ProxyMonitoring";
+import ClassroomLocations from "./pages/admin/ClassroomLocations";
 import Attendance from "./pages/Attendance";
 import AttendanceReports from "./pages/AttendanceReports";
 import SecureAttendance from "./pages/SecureAttendance";
@@ -91,6 +92,14 @@ const App = () => (
               element={
                 <ProtectedRoute allowedRoles={['admin']}>
                   <ProxyMonitoring />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/locations"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <ClassroomLocations />
                 </ProtectedRoute>
               }
             />
