@@ -20,6 +20,8 @@ import StudentSchedule from "./pages/student/StudentSchedule";
 import StudentProfile from "./pages/student/StudentProfile";
 import StudentSettings from "./pages/student/StudentSettings";
 import StudentNotices from "./pages/student/StudentNotices";
+import StudentSyllabus from "./pages/student/StudentSyllabus";
+import StudentTests from "./pages/student/StudentTests";
 import MarkAttendance from "./pages/student/MarkAttendance";
 import MyAttendance from "./pages/student/MyAttendance";
 import TeacherDashboard from "./pages/teacher/TeacherDashboard";
@@ -265,6 +267,22 @@ const App = () => (
               element={
                 <ProtectedRoute allowedRoles={['student']}>
                   <MarkAttendance />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/student/syllabus"
+              element={
+                <ProtectedRoute allowedRoles={['student']}>
+                  <StudentSyllabus />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/student/tests"
+              element={
+                <ProtectedRoute allowedRoles={['student']}>
+                  <StudentTests />
                 </ProtectedRoute>
               }
             />

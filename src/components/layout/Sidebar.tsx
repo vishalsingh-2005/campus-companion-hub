@@ -56,10 +56,14 @@ const teacherNavigation: NavItem[] = [
 
 import { Settings, User as UserIcon, Bell } from 'lucide-react';
 
+import { FileText, ClipboardCheck } from 'lucide-react';
+
 const studentNavigation: NavItem[] = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'My Profile', href: '/student/profile', icon: UserIcon },
   { name: 'My Courses', href: '/student/courses', icon: BookOpen },
+  { name: 'Syllabus', href: '/student/syllabus', icon: FileText },
+  { name: 'Tests & Exams', href: '/student/tests', icon: ClipboardCheck },
   { name: 'My Attendance', href: '/student/attendance', icon: CalendarCheck },
   { name: 'Mark Attendance', href: '/student/mark-attendance', icon: Shield },
   { name: 'My Schedule', href: '/student/schedule', icon: CalendarDays },
