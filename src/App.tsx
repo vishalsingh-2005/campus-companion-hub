@@ -26,6 +26,8 @@ import MarkAttendance from "./pages/student/MarkAttendance";
 import MyAttendance from "./pages/student/MyAttendance";
 import TeacherDashboard from "./pages/teacher/TeacherDashboard";
 import TeacherProfile from "./pages/teacher/TeacherProfile";
+import TeacherTests from "./pages/teacher/TeacherTests";
+import TakeTest from "./pages/student/TakeTest";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import UserManagement from "./pages/admin/UserManagement";
 import Reports from "./pages/admin/Reports";
@@ -201,6 +203,14 @@ const App = () => (
               element={
                 <ProtectedRoute allowedRoles={['teacher']}>
                   <TeacherProfile />
+              </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/teacher/tests"
+              element={
+                <ProtectedRoute allowedRoles={['teacher']}>
+                  <TeacherTests />
                 </ProtectedRoute>
               }
             />
@@ -283,6 +293,14 @@ const App = () => (
               element={
                 <ProtectedRoute allowedRoles={['student']}>
                   <StudentTests />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/student/take-test/:testId"
+              element={
+                <ProtectedRoute allowedRoles={['student']}>
+                  <TakeTest />
                 </ProtectedRoute>
               }
             />

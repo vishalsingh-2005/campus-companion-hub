@@ -779,6 +779,54 @@ export type Database = {
           },
         ]
       }
+      student_answers: {
+        Row: {
+          answer_text: string | null
+          answered_at: string | null
+          attempt_id: string
+          created_at: string
+          id: string
+          is_correct: boolean | null
+          marks_awarded: number | null
+          question_id: string
+        }
+        Insert: {
+          answer_text?: string | null
+          answered_at?: string | null
+          attempt_id: string
+          created_at?: string
+          id?: string
+          is_correct?: boolean | null
+          marks_awarded?: number | null
+          question_id: string
+        }
+        Update: {
+          answer_text?: string | null
+          answered_at?: string | null
+          attempt_id?: string
+          created_at?: string
+          id?: string
+          is_correct?: boolean | null
+          marks_awarded?: number | null
+          question_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_answers_attempt_id_fkey"
+            columns: ["attempt_id"]
+            isOneToOne: false
+            referencedRelation: "test_attempts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_answers_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "test_questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       student_devices: {
         Row: {
           device_fingerprint: string
@@ -924,6 +972,131 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      test_attempts: {
+        Row: {
+          created_at: string
+          end_latitude: number | null
+          end_longitude: number | null
+          end_selfie_url: string | null
+          id: string
+          start_latitude: number | null
+          start_longitude: number | null
+          start_selfie_url: string | null
+          started_at: string
+          status: string
+          student_id: string
+          submitted_at: string | null
+          tab_switch_count: number | null
+          test_id: string
+          total_marks_obtained: number | null
+          updated_at: string
+          warning_count: number | null
+          was_auto_submitted: boolean | null
+        }
+        Insert: {
+          created_at?: string
+          end_latitude?: number | null
+          end_longitude?: number | null
+          end_selfie_url?: string | null
+          id?: string
+          start_latitude?: number | null
+          start_longitude?: number | null
+          start_selfie_url?: string | null
+          started_at?: string
+          status?: string
+          student_id: string
+          submitted_at?: string | null
+          tab_switch_count?: number | null
+          test_id: string
+          total_marks_obtained?: number | null
+          updated_at?: string
+          warning_count?: number | null
+          was_auto_submitted?: boolean | null
+        }
+        Update: {
+          created_at?: string
+          end_latitude?: number | null
+          end_longitude?: number | null
+          end_selfie_url?: string | null
+          id?: string
+          start_latitude?: number | null
+          start_longitude?: number | null
+          start_selfie_url?: string | null
+          started_at?: string
+          status?: string
+          student_id?: string
+          submitted_at?: string | null
+          tab_switch_count?: number | null
+          test_id?: string
+          total_marks_obtained?: number | null
+          updated_at?: string
+          warning_count?: number | null
+          was_auto_submitted?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "test_attempts_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "test_attempts_test_id_fkey"
+            columns: ["test_id"]
+            isOneToOne: false
+            referencedRelation: "tests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      test_questions: {
+        Row: {
+          correct_answer: string
+          created_at: string
+          id: string
+          marks: number
+          options: Json | null
+          order_index: number
+          question_text: string
+          question_type: Database["public"]["Enums"]["question_type"]
+          test_id: string
+          updated_at: string
+        }
+        Insert: {
+          correct_answer: string
+          created_at?: string
+          id?: string
+          marks?: number
+          options?: Json | null
+          order_index?: number
+          question_text: string
+          question_type?: Database["public"]["Enums"]["question_type"]
+          test_id: string
+          updated_at?: string
+        }
+        Update: {
+          correct_answer?: string
+          created_at?: string
+          id?: string
+          marks?: number
+          options?: Json | null
+          order_index?: number
+          question_text?: string
+          question_type?: Database["public"]["Enums"]["question_type"]
+          test_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "test_questions_test_id_fkey"
+            columns: ["test_id"]
+            isOneToOne: false
+            referencedRelation: "tests"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       test_results: {
         Row: {
@@ -1085,6 +1258,7 @@ export type Database = {
       app_role: "admin" | "user" | "teacher" | "student"
       attendance_status: "present" | "absent" | "late" | "excused"
       participant_role: "host" | "co_host" | "participant" | "viewer"
+      question_type: "mcq" | "true_false" | "short_answer"
       session_status: "scheduled" | "waiting" | "live" | "ended" | "cancelled"
       session_type: "live_class" | "interview"
     }
@@ -1217,6 +1391,7 @@ export const Constants = {
       app_role: ["admin", "user", "teacher", "student"],
       attendance_status: ["present", "absent", "late", "excused"],
       participant_role: ["host", "co_host", "participant", "viewer"],
+      question_type: ["mcq", "true_false", "short_answer"],
       session_status: ["scheduled", "waiting", "live", "ended", "cancelled"],
       session_type: ["live_class", "interview"],
     },
