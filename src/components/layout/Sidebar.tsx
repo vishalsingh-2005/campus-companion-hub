@@ -28,6 +28,8 @@ interface NavItem {
   roles?: ('admin' | 'teacher' | 'student')[];
 }
 
+import { Code2 } from 'lucide-react';
+
 const adminNavigation: NavItem[] = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Students', href: '/students', icon: GraduationCap, roles: ['admin'] },
@@ -40,11 +42,10 @@ const adminNavigation: NavItem[] = [
   { name: 'Secure Attendance', href: '/secure-attendance', icon: Shield, roles: ['admin'] },
   { name: 'Attendance', href: '/attendance', icon: CalendarCheck, roles: ['admin'] },
   { name: 'Proxy Monitoring', href: '/admin/proxy-monitoring', icon: ShieldAlert, roles: ['admin'] },
+  { name: 'Coding Analytics', href: '/admin/coding-lab-analytics', icon: Code2, roles: ['admin'] },
   { name: 'Reports', href: '/admin/reports', icon: BarChart3, roles: ['admin'] },
   { name: 'User Accounts', href: '/admin/users', icon: UserPlus, roles: ['admin'] },
 ];
-
-import { Code2 } from 'lucide-react';
 
 const teacherNavigation: NavItem[] = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
