@@ -24,6 +24,7 @@ import {
   Search,
   KeyRound,
   Loader2,
+  Calendar,
 } from 'lucide-react';
 import { useUserRole } from '@/hooks/useUserRole';
 import { Navigate } from 'react-router-dom';
@@ -43,7 +44,7 @@ export default function UserManagement() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [resetPasswordDialogOpen, setResetPasswordDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<{ id: string; email: string; name?: string } | null>(null);
-  const [defaultRole, setDefaultRole] = useState<'teacher' | 'student' | undefined>();
+  const [defaultRole, setDefaultRole] = useState<'teacher' | 'student' | 'event_organizer' | undefined>();
   const [users, setUsers] = useState<UserWithRole[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -137,7 +138,7 @@ export default function UserManagement() {
     return <Navigate to="/access-denied" replace />;
   }
 
-  const handleCreateUser = (role?: 'teacher' | 'student') => {
+  const handleCreateUser = (role?: 'teacher' | 'student' | 'event_organizer') => {
     setDefaultRole(role);
     setCreateDialogOpen(true);
   };
@@ -165,6 +166,8 @@ export default function UserManagement() {
         return <Badge className="bg-info/10 text-info">Teacher</Badge>;
       case 'student':
         return <Badge className="bg-success/10 text-success">Student</Badge>;
+      case 'event_organizer':
+        return <Badge className="bg-violet-500/10 text-violet-600 dark:text-violet-400">Event Organizer</Badge>;
       default:
         return <Badge variant="secondary">{role}</Badge>;
     }
@@ -324,6 +327,34 @@ export default function UserManagement() {
               </CardContent>
             </Card>
 
+            {/* Create Event Organizer Account */}
+            <Card className="group hover:shadow-lg transition-all duration-300">
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-violet-500/10 text-violet-600 dark:text-violet-400 group-hover:scale-110 transition-transform">
+                    <Calendar className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <CardTitle>Event Organizer</CardTitle>
+                    <CardDescription>Create a new organizer login</CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Event organizers can create and manage college events, registrations, and more.
+                </p>
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => handleCreateUser('event_organizer')}
+                >
+                  <UserPlus className="mr-2 h-4 w-4" />
+                  Create Organizer
+                </Button>
+              </CardContent>
+            </Card>
+
             {/* Role Permissions Info */}
             <Card className="group hover:shadow-lg transition-all duration-300">
               <CardHeader>
@@ -350,6 +381,10 @@ export default function UserManagement() {
                   <li className="flex items-start gap-2">
                     <GraduationCap className="h-4 w-4 text-success mt-0.5" />
                     <span><strong>Student:</strong> View own data only</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <Calendar className="h-4 w-4 text-violet-600 dark:text-violet-400 mt-0.5" />
+                    <span><strong>Organizer:</strong> Manage events</span>
                   </li>
                 </ul>
               </CardContent>

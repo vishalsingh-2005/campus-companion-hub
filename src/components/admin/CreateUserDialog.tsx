@@ -26,14 +26,16 @@ const createUserSchema = z.object({
   email: z.string().email('Invalid email address'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
   fullName: z.string().min(2, 'Name must be at least 2 characters'),
-  role: z.enum(['teacher', 'student'], { required_error: 'Please select a role' }),
+  role: z.enum(['teacher', 'student', 'event_organizer'], { required_error: 'Please select a role' }),
 });
+
+type UserRole = 'teacher' | 'student' | 'event_organizer';
 
 interface CreateUserDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onUserCreated?: (userId: string, role: 'teacher' | 'student') => void;
-  defaultRole?: 'teacher' | 'student';
+  onUserCreated?: (userId: string, role: UserRole) => void;
+  defaultRole?: UserRole;
 }
 
 export function CreateUserDialog({
@@ -47,7 +49,7 @@ export function CreateUserDialog({
     email: '',
     password: '',
     fullName: '',
-    role: defaultRole || '' as 'teacher' | 'student' | '',
+    role: defaultRole || '' as UserRole | '',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -87,7 +89,7 @@ export function CreateUserDialog({
     const { userId, error } = await createUserAccount(
       formData.email,
       formData.password,
-      formData.role as 'teacher' | 'student',
+      formData.role as UserRole,
       formData.fullName
     );
 
@@ -98,8 +100,13 @@ export function CreateUserDialog({
         toast.error(error);
       }
     } else if (userId) {
-      toast.success(`${formData.role === 'teacher' ? 'Teacher' : 'Student'} account created successfully!`);
-      onUserCreated?.(userId, formData.role as 'teacher' | 'student');
+      const roleLabels: Record<UserRole, string> = {
+        teacher: 'Teacher',
+        student: 'Student',
+        event_organizer: 'Event Organizer',
+      };
+      toast.success(`${roleLabels[formData.role as UserRole]} account created successfully!`);
+      onUserCreated?.(userId, formData.role as UserRole);
       resetForm();
       onOpenChange(false);
     }
@@ -132,7 +139,7 @@ export function CreateUserDialog({
               <Label htmlFor="role">Role <span className="text-destructive">*</span></Label>
               <Select
                 value={formData.role}
-                onValueChange={(value) => setFormData({ ...formData, role: value as 'teacher' | 'student' })}
+                onValueChange={(value) => setFormData({ ...formData, role: value as UserRole })}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select a role" />
@@ -140,6 +147,7 @@ export function CreateUserDialog({
                 <SelectContent>
                   <SelectItem value="teacher">Teacher</SelectItem>
                   <SelectItem value="student">Student</SelectItem>
+                  <SelectItem value="event_organizer">Event Organizer</SelectItem>
                 </SelectContent>
               </Select>
               {errors.role && (

@@ -11,7 +11,7 @@ interface CreateUserRequest {
   email: string;
   password: string;
   full_name: string;
-  role: "teacher" | "student";
+  role: "teacher" | "student" | "event_organizer";
 }
 
 serve(async (req: Request): Promise<Response> => {
@@ -98,9 +98,9 @@ serve(async (req: Request): Promise<Response> => {
       );
     }
 
-    if (!["teacher", "student"].includes(role)) {
+    if (!["teacher", "student", "event_organizer"].includes(role)) {
       return new Response(
-        JSON.stringify({ error: "Invalid role. Must be 'teacher' or 'student'", code: "INVALID_ROLE" }),
+        JSON.stringify({ error: "Invalid role. Must be 'teacher', 'student', or 'event_organizer'", code: "INVALID_ROLE" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
