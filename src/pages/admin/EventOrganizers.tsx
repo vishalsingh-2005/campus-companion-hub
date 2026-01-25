@@ -73,10 +73,10 @@ export default function EventOrganizers() {
 
       const userIds = roleData.map(r => r.user_id);
 
-      // Get profiles for these users
+      // Get profiles for these users (including email)
       const { data: profiles, error: profileError } = await supabase
         .from('profiles')
-        .select('user_id, full_name, created_at')
+        .select('user_id, full_name, email, created_at')
         .in('user_id', userIds);
 
       if (profileError) throw profileError;
@@ -92,13 +92,11 @@ export default function EventOrganizers() {
             .select('*', { count: 'exact', head: true })
             .eq('created_by', userId);
 
-          // Get email from auth (we'll use a workaround since we can't directly query auth.users)
-          // For now, we'll show the user_id and profile data
           return {
-            id: crypto.randomUUID(),
+            id: userId,
             user_id: userId,
-            email: profile?.full_name ? `${profile.full_name.toLowerCase().replace(/\s+/g, '.')}@example.com` : 'N/A',
-            full_name: profile?.full_name || 'Unknown',
+            email: profile?.email || 'Email not set',
+            full_name: profile?.full_name || 'Unknown User',
             created_at: profile?.created_at || new Date().toISOString(),
             event_count: count || 0,
           };
@@ -107,6 +105,7 @@ export default function EventOrganizers() {
 
       setOrganizers(organizersWithData);
     } catch (error: any) {
+      console.error('Fetch error:', error);
       toast.error('Failed to fetch organizers: ' + error.message);
     } finally {
       setLoading(false);

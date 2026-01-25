@@ -125,6 +125,17 @@ serve(async (req: Request): Promise<Response> => {
       );
     }
 
+    // Update the profile with the email (since the trigger creates profile but may not have email)
+    const { error: profileUpdateError } = await adminClient
+      .from("profiles")
+      .update({ email: email })
+      .eq("user_id", newUser.user.id);
+
+    if (profileUpdateError) {
+      console.error("Failed to update profile with email:", profileUpdateError);
+      // Not critical, continue
+    }
+
     // Assign the role to the user
     const { error: roleInsertError } = await adminClient
       .from("user_roles")
