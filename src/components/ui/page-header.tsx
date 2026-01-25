@@ -1,5 +1,5 @@
 import { ReactNode } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 
@@ -9,10 +9,37 @@ interface PageHeaderProps {
   actions?: ReactNode;
   children?: ReactNode;
   showBackButton?: boolean;
+  backTo?: string;
 }
 
-export function PageHeader({ title, description, actions, children, showBackButton = true }: PageHeaderProps) {
+export function PageHeader({ title, description, actions, children, showBackButton = true, backTo }: PageHeaderProps) {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const handleBack = () => {
+    // If a specific path is provided, use it
+    if (backTo) {
+      navigate(backTo);
+      return;
+    }
+
+    // Check if there's history to go back to
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      // Fallback: navigate to appropriate dashboard based on current path
+      const path = location.pathname;
+      if (path.startsWith('/teacher')) {
+        navigate('/teacher/dashboard');
+      } else if (path.startsWith('/student')) {
+        navigate('/student/dashboard');
+      } else if (path.startsWith('/admin')) {
+        navigate('/admin/dashboard');
+      } else {
+        navigate('/');
+      }
+    }
+  };
 
   return (
     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
@@ -21,7 +48,7 @@ export function PageHeader({ title, description, actions, children, showBackButt
           <Button
             variant="outline"
             size="icon"
-            onClick={() => navigate(-1)}
+            onClick={handleBack}
             className="flex-shrink-0"
             title="Go back"
           >
