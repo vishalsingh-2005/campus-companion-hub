@@ -6,9 +6,10 @@ import { RoleLoginForm } from '@/components/auth/RoleLoginForm';
 import { StudentIllustration } from '@/components/auth/illustrations/StudentIllustration';
 import { TeacherIllustration } from '@/components/auth/illustrations/TeacherIllustration';
 import { AdminIllustration } from '@/components/auth/illustrations/AdminIllustration';
-import { GraduationCap, BookOpen, Shield, Loader2 } from 'lucide-react';
+import { EventOrganizerIllustration } from '@/components/auth/illustrations/EventOrganizerIllustration';
+import { GraduationCap, BookOpen, Shield, Calendar, Loader2 } from 'lucide-react';
 
-type SelectedRole = 'admin' | 'teacher' | 'student' | null;
+type SelectedRole = 'admin' | 'teacher' | 'student' | 'event_organizer' | null;
 
 export default function Auth() {
   const { user, loading } = useAuth();
@@ -66,6 +67,19 @@ export default function Auth() {
     );
   }
 
+  if (selectedRole === 'event_organizer') {
+    return (
+      <RoleLoginForm
+        role="event_organizer"
+        onBack={() => setSelectedRole(null)}
+        illustration={<EventOrganizerIllustration />}
+        gradient="bg-gradient-to-br from-violet-500 to-purple-600"
+        title="Event Organizer Portal"
+        subtitle="Create and manage college events"
+      />
+    );
+  }
+
   // Role selection screen
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4 relative overflow-hidden">
@@ -77,7 +91,7 @@ export default function Auth() {
       </div>
 
       {/* Content */}
-      <div className="relative z-10 w-full max-w-4xl">
+      <div className="relative z-10 w-full max-w-5xl">
         {/* Header */}
         <div className="text-center mb-12 animate-fade-in">
           <div className="flex justify-center mb-6">
@@ -94,7 +108,7 @@ export default function Auth() {
         </div>
 
         {/* Role cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <RoleCard
             title="Student"
             description="View your courses, grades, and attendance"
@@ -114,13 +128,22 @@ export default function Auth() {
             delay={100}
           />
           <RoleCard
+            title="Event Organizer"
+            description="Create and manage college events"
+            icon={Calendar}
+            gradient="bg-gradient-to-br from-violet-500 to-purple-600"
+            iconBg="bg-gradient-to-br from-violet-500 to-purple-600"
+            onClick={() => setSelectedRole('event_organizer')}
+            delay={200}
+          />
+          <RoleCard
             title="Administrator"
             description="Full system control and management"
             icon={Shield}
             gradient="bg-gradient-to-br from-slate-700 to-slate-900"
             iconBg="bg-gradient-to-br from-slate-700 to-slate-900"
             onClick={() => setSelectedRole('admin')}
-            delay={200}
+            delay={300}
           />
         </div>
 

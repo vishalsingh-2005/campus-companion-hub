@@ -35,6 +35,8 @@ export function PageHeader({ title, description, actions, children, showBackButt
         navigate('/student/dashboard');
       } else if (path.startsWith('/admin')) {
         navigate('/admin/dashboard');
+      } else if (path.startsWith('/organizer')) {
+        navigate('/organizer/dashboard');
       } else {
         navigate('/');
       }
