@@ -582,6 +582,107 @@ export type Database = {
           },
         ]
       }
+      event_announcements: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          event_id: string | null
+          id: string
+          is_global: boolean
+          message: string
+          priority: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          event_id?: string | null
+          id?: string
+          is_global?: boolean
+          message: string
+          priority?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          event_id?: string | null
+          id?: string
+          is_global?: boolean
+          message?: string
+          priority?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_announcements_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_attendance: {
+        Row: {
+          attendance_method: string
+          check_in_time: string
+          check_out_time: string | null
+          created_at: string
+          event_id: string
+          id: string
+          notes: string | null
+          participant_email: string
+          participant_name: string
+          recorded_by: string | null
+          registration_id: string | null
+        }
+        Insert: {
+          attendance_method?: string
+          check_in_time?: string
+          check_out_time?: string | null
+          created_at?: string
+          event_id: string
+          id?: string
+          notes?: string | null
+          participant_email: string
+          participant_name: string
+          recorded_by?: string | null
+          registration_id?: string | null
+        }
+        Update: {
+          attendance_method?: string
+          check_in_time?: string
+          check_out_time?: string | null
+          created_at?: string
+          event_id?: string
+          id?: string
+          notes?: string | null
+          participant_email?: string
+          participant_name?: string
+          recorded_by?: string | null
+          registration_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_attendance_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_attendance_registration_id_fkey"
+            columns: ["registration_id"]
+            isOneToOne: false
+            referencedRelation: "event_registrations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       event_registrations: {
         Row: {
           checked_in_at: string | null
