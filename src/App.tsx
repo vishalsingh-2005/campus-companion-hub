@@ -27,6 +27,7 @@ import MyAttendance from "./pages/student/MyAttendance";
 import TeacherDashboard from "./pages/teacher/TeacherDashboard";
 import TeacherProfile from "./pages/teacher/TeacherProfile";
 import TeacherTests from "./pages/teacher/TeacherTests";
+import TestAnalytics from "./pages/teacher/TestAnalytics";
 import TeacherCodingLabs from "./pages/teacher/TeacherCodingLabs";
 import TakeTest from "./pages/student/TakeTest";
 import CodingLabs from "./pages/student/CodingLabs";
@@ -214,6 +215,14 @@ const App = () => (
               element={
                 <ProtectedRoute allowedRoles={['teacher']}>
                   <TeacherTests />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/teacher/tests/:testId/analytics"
+              element={
+                <ProtectedRoute allowedRoles={['teacher']}>
+                  <TestAnalytics />
                 </ProtectedRoute>
               }
             />

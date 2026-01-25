@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { PageHeader } from '@/components/ui/page-header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,7 +16,8 @@ import {
   Users,
   BookOpen,
   CheckCircle2,
-  Clock
+  Clock,
+  BarChart3,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -61,6 +63,7 @@ interface Course {
 }
 
 export default function TeacherTests() {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
@@ -277,6 +280,17 @@ export default function TeacherTests() {
       >
         <Users className="h-4 w-4" />
       </Button>
+      {test.status === 'completed' && (
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => navigate(`/teacher/tests/${test.id}/analytics`)}
+          title="View Analytics"
+          className="text-primary"
+        >
+          <BarChart3 className="h-4 w-4" />
+        </Button>
+      )}
       {test.status === 'scheduled' && (
         <>
           <Button
