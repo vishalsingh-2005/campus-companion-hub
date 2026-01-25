@@ -16,15 +16,7 @@ export function PageHeader({ title, description, actions, children, showBackButt
 
   return (
     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
-      <div className="animate-slide-in-left">
-        <h1 className="text-3xl font-bold text-foreground">{title}</h1>
-        {description && (
-          <p className="mt-1 text-muted-foreground">{description}</p>
-        )}
-      </div>
-      <div className="animate-fade-in flex items-center gap-4">
-        {children}
-        {actions}
+      <div className="animate-slide-in-left flex items-center gap-4">
         {showBackButton && (
           <Button
             variant="outline"
@@ -36,7 +28,19 @@ export function PageHeader({ title, description, actions, children, showBackButt
             <ArrowLeft className="h-4 w-4" />
           </Button>
         )}
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">{title}</h1>
+          {description && (
+            <p className="mt-1 text-muted-foreground">{description}</p>
+          )}
+        </div>
       </div>
+      {(actions || children) && (
+        <div className="animate-fade-in flex items-center gap-4">
+          {children}
+          {actions}
+        </div>
+      )}
     </div>
   );
 }
