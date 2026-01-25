@@ -14,3 +14,6 @@ verify_jwt = false
 
 [functions.execute-code]
 verify_jwt = false
+
+[functions.check-plagiarism]
+verify_jwt = false

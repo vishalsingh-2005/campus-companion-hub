@@ -26,6 +26,7 @@ import {
   FileCode,
   ToggleLeft,
   ToggleRight,
+  Shield,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -34,6 +35,7 @@ import { format } from 'date-fns';
 import { CodingLabFormDialog } from '@/components/coding-lab/CodingLabFormDialog';
 import { TestCaseFormDialog } from '@/components/coding-lab/TestCaseFormDialog';
 import { ViewSubmissionsDialog } from '@/components/coding-lab/ViewSubmissionsDialog';
+import { PlagiarismDialog } from '@/components/coding-lab/PlagiarismDialog';
 import { DeleteConfirmDialog } from '@/components/common/DeleteConfirmDialog';
 
 export default function TeacherCodingLabs() {
@@ -45,6 +47,7 @@ export default function TeacherCodingLabs() {
   const [formDialogOpen, setFormDialogOpen] = useState(false);
   const [testCaseDialogOpen, setTestCaseDialogOpen] = useState(false);
   const [submissionsDialogOpen, setSubmissionsDialogOpen] = useState(false);
+  const [plagiarismDialogOpen, setPlagiarismDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedLab, setSelectedLab] = useState<CodingLab | null>(null);
 
@@ -262,6 +265,18 @@ export default function TeacherCodingLabs() {
                               size="icon"
                               onClick={() => {
                                 setSelectedLab(lab);
+                                setPlagiarismDialogOpen(true);
+                              }}
+                              title="Plagiarism Check"
+                              className="text-warning hover:text-warning"
+                            >
+                              <Shield className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => {
+                                setSelectedLab(lab);
                                 setFormDialogOpen(true);
                               }}
                               title="Edit"
@@ -330,6 +345,13 @@ export default function TeacherCodingLabs() {
       <ViewSubmissionsDialog
         open={submissionsDialogOpen}
         onOpenChange={setSubmissionsDialogOpen}
+        labId={selectedLab?.id || ''}
+        labTitle={selectedLab?.title || ''}
+      />
+
+      <PlagiarismDialog
+        open={plagiarismDialogOpen}
+        onOpenChange={setPlagiarismDialogOpen}
         labId={selectedLab?.id || ''}
         labTitle={selectedLab?.title || ''}
       />
