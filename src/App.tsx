@@ -40,6 +40,9 @@ import ClassroomLocations from "./pages/admin/ClassroomLocations";
 import CodingLabAnalytics from "./pages/admin/CodingLabAnalytics";
 import OrganizerDashboard from "./pages/organizer/OrganizerDashboard";
 import EventsManagement from "./pages/organizer/EventsManagement";
+import EventAttendance from "./pages/organizer/EventAttendance";
+import EventAnnouncements from "./pages/organizer/EventAnnouncements";
+import EventAnalytics from "./pages/organizer/EventAnalytics";
 import Attendance from "./pages/Attendance";
 import AttendanceReports from "./pages/AttendanceReports";
 import SecureAttendance from "./pages/SecureAttendance";
@@ -366,6 +369,30 @@ const App = () => (
               element={
                 <ProtectedRoute allowedRoles={['event_organizer']}>
                   <EventsManagement />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/organizer/attendance"
+              element={
+                <ProtectedRoute allowedRoles={['event_organizer']}>
+                  <EventAttendance />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/organizer/announcements"
+              element={
+                <ProtectedRoute allowedRoles={['event_organizer']}>
+                  <EventAnnouncements />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/organizer/analytics"
+              element={
+                <ProtectedRoute allowedRoles={['event_organizer']}>
+                  <EventAnalytics />
                 </ProtectedRoute>
               }
             />

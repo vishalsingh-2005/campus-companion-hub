@@ -28,7 +28,7 @@ interface NavItem {
   roles?: ('admin' | 'teacher' | 'student' | 'event_organizer')[];
 }
 
-import { Code2, Calendar, Ticket } from 'lucide-react';
+import { Code2, Calendar, Ticket, Megaphone, BarChart3 as ChartBar, UserCheck } from 'lucide-react';
 
 const adminNavigation: NavItem[] = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -81,7 +81,9 @@ const studentNavigation: NavItem[] = [
 const organizerNavigation: NavItem[] = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'My Events', href: '/organizer/events', icon: Calendar },
-  { name: 'Registrations', href: '/organizer/registrations', icon: Ticket },
+  { name: 'Attendance', href: '/organizer/attendance', icon: UserCheck },
+  { name: 'Announcements', href: '/organizer/announcements', icon: Megaphone },
+  { name: 'Analytics', href: '/organizer/analytics', icon: ChartBar },
   { name: 'Live Sessions', href: '/live-sessions', icon: Video },
 ];
 
