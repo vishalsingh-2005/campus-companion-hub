@@ -20,12 +20,14 @@ import {
   AlertTriangle,
   ChevronRight,
   Percent,
-  Calendar
+  Calendar,
+  Megaphone,
+  PartyPopper
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Skeleton } from '@/components/ui/skeleton';
-import { format, isToday, parseISO } from 'date-fns';
+import { format, isToday, parseISO, isFuture } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { DAYS_OF_WEEK } from '@/types/schedule';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -98,6 +100,30 @@ interface NotificationData {
   is_read: boolean;
 }
 
+interface AnnouncementData {
+  id: string;
+  title: string;
+  message: string;
+  priority: string;
+  is_global: boolean;
+  created_at: string;
+  events?: {
+    title: string;
+  } | null;
+}
+
+interface EventData {
+  id: string;
+  title: string;
+  description: string | null;
+  event_type: string;
+  venue: string | null;
+  start_date: string;
+  end_date: string | null;
+  status: string;
+  is_public: boolean;
+}
+
 function formatTime(time: string) {
   const [hours, minutes] = time.split(':');
   const h = parseInt(hours);
@@ -115,6 +141,8 @@ export default function StudentDashboard() {
   const [todaySchedules, setTodaySchedules] = useState<ScheduleData[]>([]);
   const [liveSessions, setLiveSessions] = useState<LiveSessionData[]>([]);
   const [notifications, setNotifications] = useState<NotificationData[]>([]);
+  const [announcements, setAnnouncements] = useState<AnnouncementData[]>([]);
+  const [upcomingEvents, setUpcomingEvents] = useState<EventData[]>([]);
 
   useEffect(() => {
     async function fetchStudentData() {
@@ -219,6 +247,31 @@ export default function StudentDashboard() {
               is_read: false,
             },
           ]);
+        }
+
+        // Fetch announcements (global or for public events)
+        const { data: announcementsData, error: announcementsError } = await supabase
+          .from('event_announcements')
+          .select('id, title, message, priority, is_global, created_at, events(title)')
+          .order('created_at', { ascending: false })
+          .limit(5);
+
+        if (!announcementsError) {
+          setAnnouncements(announcementsData || []);
+        }
+
+        // Fetch upcoming public events
+        const { data: eventsData, error: eventsError } = await supabase
+          .from('events')
+          .select('id, title, description, event_type, venue, start_date, end_date, status, is_public')
+          .eq('is_public', true)
+          .eq('status', 'published')
+          .gte('start_date', new Date().toISOString())
+          .order('start_date', { ascending: true })
+          .limit(5);
+
+        if (!eventsError) {
+          setUpcomingEvents(eventsData || []);
         }
       } catch (error) {
         console.error('Error fetching student data:', error);
@@ -575,7 +628,146 @@ export default function StudentDashboard() {
         </CardContent>
       </Card>
 
-      {/* Notifications */}
+      {/* Announcements & Upcoming Events Grid */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* Announcements */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <Megaphone className="h-5 w-5 text-primary" />
+              Announcements
+            </CardTitle>
+            <Button variant="ghost" size="sm" asChild>
+              <Link to="/student/notices">View All</Link>
+            </Button>
+          </CardHeader>
+          <CardContent>
+            {announcements.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-8 text-center">
+                <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
+                  <Megaphone className="h-8 w-8 text-muted-foreground" />
+                </div>
+                <p className="font-medium">No announcements</p>
+                <p className="text-sm text-muted-foreground mt-1">Check back later for updates</p>
+              </div>
+            ) : (
+              <ScrollArea className="h-[280px]">
+                <div className="space-y-3 pr-4">
+                  {announcements.map((announcement) => (
+                    <div
+                      key={announcement.id}
+                      className={cn(
+                        'p-4 rounded-xl border bg-card hover:bg-muted/50 transition-colors',
+                        announcement.priority === 'high' && 'border-destructive/30 bg-destructive/5'
+                      )}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <div className={cn(
+                            'h-8 w-8 rounded-lg flex items-center justify-center flex-shrink-0',
+                            announcement.priority === 'high' ? 'bg-destructive/10' : 'bg-primary/10'
+                          )}>
+                            <Megaphone className={cn(
+                              'h-4 w-4',
+                              announcement.priority === 'high' ? 'text-destructive' : 'text-primary'
+                            )} />
+                          </div>
+                          <div>
+                            <p className="font-semibold line-clamp-1">{announcement.title}</p>
+                            {announcement.events?.title && (
+                              <p className="text-xs text-muted-foreground">{announcement.events.title}</p>
+                            )}
+                          </div>
+                        </div>
+                        <Badge 
+                          variant="secondary" 
+                          className={cn(
+                            'capitalize text-xs',
+                            announcement.priority === 'high' && 'bg-destructive/10 text-destructive',
+                            announcement.priority === 'urgent' && 'bg-destructive text-destructive-foreground'
+                          )}
+                        >
+                          {announcement.priority}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{announcement.message}</p>
+                      <p className="text-xs text-muted-foreground mt-2">
+                        {format(parseISO(announcement.created_at), 'MMM d, h:mm a')}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Upcoming Events */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <PartyPopper className="h-5 w-5 text-primary" />
+              Upcoming Events
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {upcomingEvents.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-8 text-center">
+                <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
+                  <PartyPopper className="h-8 w-8 text-muted-foreground" />
+                </div>
+                <p className="font-medium">No upcoming events</p>
+                <p className="text-sm text-muted-foreground mt-1">Stay tuned for future events!</p>
+              </div>
+            ) : (
+              <ScrollArea className="h-[280px]">
+                <div className="space-y-3 pr-4">
+                  {upcomingEvents.map((event) => (
+                    <div
+                      key={event.id}
+                      className="p-4 rounded-xl border bg-card hover:bg-muted/50 transition-colors"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="h-12 w-12 rounded-xl bg-primary/10 flex flex-col items-center justify-center flex-shrink-0">
+                          <span className="text-xs font-medium text-primary">
+                            {format(parseISO(event.start_date), 'MMM')}
+                          </span>
+                          <span className="text-lg font-bold text-primary leading-none">
+                            {format(parseISO(event.start_date), 'd')}
+                          </span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold line-clamp-1">{event.title}</p>
+                          <div className="flex flex-wrap items-center gap-2 mt-1 text-sm text-muted-foreground">
+                            <Badge variant="outline" className="text-xs capitalize">
+                              {event.event_type}
+                            </Badge>
+                            {event.venue && (
+                              <span className="flex items-center gap-1 text-xs">
+                                <MapPin className="h-3 w-3" />
+                                {event.venue}
+                              </span>
+                            )}
+                          </div>
+                          {event.description && (
+                            <p className="text-sm text-muted-foreground mt-1 line-clamp-1">
+                              {event.description}
+                            </p>
+                          )}
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {format(parseISO(event.start_date), 'EEEE, h:mm a')}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
       {notifications.length > 0 && (
         <Card>
           <CardHeader>
