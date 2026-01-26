@@ -11,13 +11,13 @@ import {
   X,
   Shield,
   User,
-  ShieldAlert,
   Video,
   MapPin,
+  IndianRupee,
 } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { UserPlus, BarChart3, CalendarCheck, CalendarDays } from 'lucide-react';
+import { UserPlus, BarChart3, CalendarDays } from 'lucide-react';
 import { useUserRole } from '@/hooks/useUserRole';
 import { Button } from '@/components/ui/button';
 
@@ -37,13 +37,9 @@ const adminNavigation: NavItem[] = [
   { name: 'Event Organizers', href: '/admin/organizers', icon: Calendar, roles: ['admin'] },
   { name: 'Courses', href: '/courses', icon: BookOpen, roles: ['admin'] },
   { name: 'Enrollments', href: '/enrollments', icon: ClipboardList, roles: ['admin'] },
-  { name: 'Live Sessions', href: '/live-sessions', icon: Video, roles: ['admin'] },
+  { name: 'Fees Management', href: '/admin/fees', icon: IndianRupee, roles: ['admin'] },
   { name: 'Schedules', href: '/schedules', icon: CalendarDays, roles: ['admin'] },
   { name: 'Locations', href: '/admin/locations', icon: MapPin, roles: ['admin'] },
-  { name: 'Secure Attendance', href: '/secure-attendance', icon: Shield, roles: ['admin'] },
-  { name: 'Attendance', href: '/attendance', icon: CalendarCheck, roles: ['admin'] },
-  { name: 'Proxy Monitoring', href: '/admin/proxy-monitoring', icon: ShieldAlert, roles: ['admin'] },
-  { name: 'Coding Analytics', href: '/admin/coding-lab-analytics', icon: Code2, roles: ['admin'] },
   { name: 'Reports', href: '/admin/reports', icon: BarChart3, roles: ['admin'] },
   { name: 'User Accounts', href: '/admin/users', icon: UserPlus, roles: ['admin'] },
 ];
@@ -56,15 +52,12 @@ const teacherNavigation: NavItem[] = [
   { name: 'Live Sessions', href: '/live-sessions', icon: Video },
   { name: 'Secure Attendance', href: '/secure-attendance', icon: Shield },
   { name: 'Schedules', href: '/schedules', icon: CalendarDays },
-  { name: 'Attendance', href: '/attendance', icon: CalendarCheck },
   { name: 'Reports', href: '/attendance/reports', icon: BarChart3 },
 ];
 
 import { Settings, User as UserIcon, Bell } from 'lucide-react';
 
-import { FileText, ClipboardCheck } from 'lucide-react';
-
-
+import { FileText, ClipboardCheck, CalendarCheck } from 'lucide-react';
 
 const studentNavigation: NavItem[] = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -73,6 +66,7 @@ const studentNavigation: NavItem[] = [
   { name: 'Syllabus', href: '/student/syllabus', icon: FileText },
   { name: 'Tests & Exams', href: '/student/tests', icon: ClipboardCheck },
   { name: 'Coding Labs', href: '/student/coding-labs', icon: Code2 },
+  { name: 'My Fees', href: '/student/fees', icon: IndianRupee },
   { name: 'My Attendance', href: '/student/attendance', icon: CalendarCheck },
   { name: 'Mark Attendance', href: '/student/mark-attendance', icon: Shield },
   { name: 'My Schedule', href: '/student/schedule', icon: CalendarDays },
