@@ -36,10 +36,9 @@ import StudentEvents from "./pages/student/StudentEvents";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import UserManagement from "./pages/admin/UserManagement";
 import Reports from "./pages/admin/Reports";
-import ProxyMonitoring from "./pages/admin/ProxyMonitoring";
 import ClassroomLocations from "./pages/admin/ClassroomLocations";
-import CodingLabAnalytics from "./pages/admin/CodingLabAnalytics";
 import EventOrganizers from "./pages/admin/EventOrganizers";
+import FeesManagement from "./pages/admin/FeesManagement";
 import OrganizerDashboard from "./pages/organizer/OrganizerDashboard";
 import EventsManagement from "./pages/organizer/EventsManagement";
 import EventAttendance from "./pages/organizer/EventAttendance";
@@ -51,6 +50,7 @@ import SecureAttendance from "./pages/SecureAttendance";
 import Schedules from "./pages/Schedules";
 import LiveSessions from "./pages/LiveSessions";
 import LiveRoom from "./pages/LiveRoom";
+import StudentFees from "./pages/student/StudentFees";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -105,14 +105,6 @@ const App = () => (
               }
             />
             <Route
-              path="/admin/proxy-monitoring"
-              element={
-                <ProtectedRoute allowedRoles={['admin']}>
-                  <ProxyMonitoring />
-                </ProtectedRoute>
-              }
-            />
-            <Route
               path="/admin/locations"
               element={
                 <ProtectedRoute allowedRoles={['admin']}>
@@ -121,18 +113,18 @@ const App = () => (
               }
             />
             <Route
-              path="/admin/coding-lab-analytics"
-              element={
-                <ProtectedRoute allowedRoles={['admin']}>
-                  <CodingLabAnalytics />
-                </ProtectedRoute>
-              }
-            />
-            <Route
               path="/admin/organizers"
               element={
                 <ProtectedRoute allowedRoles={['admin']}>
                   <EventOrganizers />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/fees"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <FeesManagement />
                 </ProtectedRoute>
               }
             />
@@ -361,6 +353,14 @@ const App = () => (
               element={
                 <ProtectedRoute allowedRoles={['student']}>
                   <StudentEvents />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/student/fees"
+              element={
+                <ProtectedRoute allowedRoles={['student']}>
+                  <StudentFees />
                 </ProtectedRoute>
               }
             />

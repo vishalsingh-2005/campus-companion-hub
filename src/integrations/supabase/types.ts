@@ -1381,6 +1381,68 @@ export type Database = {
           },
         ]
       }
+      student_fees: {
+        Row: {
+          academic_year: string | null
+          amount: number
+          created_at: string
+          description: string | null
+          due_date: string
+          fee_type: string
+          id: string
+          paid_amount: number | null
+          payment_date: string | null
+          payment_method: string | null
+          semester: string | null
+          status: string
+          student_id: string
+          transaction_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          academic_year?: string | null
+          amount: number
+          created_at?: string
+          description?: string | null
+          due_date: string
+          fee_type: string
+          id?: string
+          paid_amount?: number | null
+          payment_date?: string | null
+          payment_method?: string | null
+          semester?: string | null
+          status?: string
+          student_id: string
+          transaction_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          academic_year?: string | null
+          amount?: number
+          created_at?: string
+          description?: string | null
+          due_date?: string
+          fee_type?: string
+          id?: string
+          paid_amount?: number | null
+          payment_date?: string | null
+          payment_method?: string | null
+          semester?: string | null
+          status?: string
+          student_id?: string
+          transaction_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_fees_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       students: {
         Row: {
           address: string | null
