@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.check-plagiarism]
 verify_jwt = false
+
+[functions.seed-test-users]
+verify_jwt = false
