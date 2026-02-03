@@ -14,6 +14,13 @@ interface CreateUserRequest {
   role: "teacher" | "student" | "event_organizer";
 }
 
+// Generate a unique ID for teacher/student records
+function generateUniqueId(prefix: string): string {
+  const timestamp = Date.now().toString(36);
+  const random = Math.random().toString(36).substring(2, 6);
+  return `${prefix}-${timestamp}${random}`.toUpperCase();
+}
+
 serve(async (req: Request): Promise<Response> => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
@@ -43,7 +50,6 @@ serve(async (req: Request): Promise<Response> => {
 
     // Create Supabase clients
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
     // Service client for admin operations
@@ -125,11 +131,13 @@ serve(async (req: Request): Promise<Response> => {
       );
     }
 
-    // Update the profile with the email (since the trigger creates profile but may not have email)
+    const userId = newUser.user.id;
+
+    // Update the profile with the email
     const { error: profileUpdateError } = await adminClient
       .from("profiles")
-      .update({ email: email })
-      .eq("user_id", newUser.user.id);
+      .update({ email: email, full_name: full_name })
+      .eq("user_id", userId);
 
     if (profileUpdateError) {
       console.error("Failed to update profile with email:", profileUpdateError);
@@ -140,7 +148,7 @@ serve(async (req: Request): Promise<Response> => {
     const { error: roleInsertError } = await adminClient
       .from("user_roles")
       .insert({
-        user_id: newUser.user.id,
+        user_id: userId,
         role: role,
       });
 
@@ -151,20 +159,66 @@ serve(async (req: Request): Promise<Response> => {
         JSON.stringify({ 
           success: true,
           warning: "User created but role assignment failed",
-          user_id: newUser.user.id,
+          user_id: userId,
           email: newUser.user.email 
         }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    console.log(`User created successfully: ${newUser.user.id} with role: ${role}`);
+    // Parse the full name into first and last name
+    const nameParts = full_name.trim().split(/\s+/);
+    const firstName = nameParts[0] || full_name;
+    const lastName = nameParts.slice(1).join(" ") || "";
+
+    // Create the corresponding record in teachers or students table
+    if (role === "teacher") {
+      const teacherId = generateUniqueId("T");
+      const { error: teacherInsertError } = await adminClient
+        .from("teachers")
+        .insert({
+          user_id: userId,
+          email: email,
+          first_name: firstName,
+          last_name: lastName,
+          teacher_id: teacherId,
+          status: "active",
+        });
+
+      if (teacherInsertError) {
+        console.error("Failed to create teacher record:", teacherInsertError);
+        // Continue - user can still log in, teacher record can be created manually
+      } else {
+        console.log(`Teacher record created with ID: ${teacherId}`);
+      }
+    } else if (role === "student") {
+      const studentId = generateUniqueId("S");
+      const { error: studentInsertError } = await adminClient
+        .from("students")
+        .insert({
+          user_id: userId,
+          email: email,
+          first_name: firstName,
+          last_name: lastName,
+          student_id: studentId,
+          status: "active",
+        });
+
+      if (studentInsertError) {
+        console.error("Failed to create student record:", studentInsertError);
+        // Continue - user can still log in, student record can be created manually
+      } else {
+        console.log(`Student record created with ID: ${studentId}`);
+      }
+    }
+
+    console.log(`User created successfully: ${userId} with role: ${role}`);
 
     return new Response(
       JSON.stringify({ 
         success: true, 
         message: "User created successfully",
-        user_id: newUser.user.id,
+        user_id: userId,
         email: newUser.user.email 
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
