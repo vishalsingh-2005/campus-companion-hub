@@ -51,6 +51,9 @@ import Schedules from "./pages/Schedules";
 import LiveSessions from "./pages/LiveSessions";
 import LiveRoom from "./pages/LiveRoom";
 import StudentFees from "./pages/student/StudentFees";
+import StudentHolidays from "./pages/student/StudentHolidays";
+import TeacherHolidays from "./pages/teacher/TeacherHolidays";
+import HolidaysManagement from "./pages/admin/HolidaysManagement";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -129,7 +132,14 @@ const App = () => (
               }
             />
             <Route
-              path="/attendance"
+              path="/admin/holidays"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <HolidaysManagement />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               element={
                 <ProtectedRoute allowedRoles={['admin', 'teacher']}>
                   <Attendance />
@@ -253,7 +263,14 @@ const App = () => (
               }
             />
             <Route
-              path="/student/courses"
+              path="/teacher/holidays"
+              element={
+                <ProtectedRoute allowedRoles={['teacher']}>
+                  <TeacherHolidays />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               element={
                 <ProtectedRoute allowedRoles={['student']}>
                   <StudentCourses />
@@ -353,6 +370,14 @@ const App = () => (
               element={
                 <ProtectedRoute allowedRoles={['student']}>
                   <StudentEvents />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/student/holidays"
+              element={
+                <ProtectedRoute allowedRoles={['student']}>
+                  <StudentHolidays />
                 </ProtectedRoute>
               }
             />

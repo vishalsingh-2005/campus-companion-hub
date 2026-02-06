@@ -40,6 +40,7 @@ const adminNavigation: NavItem[] = [
   { name: 'Fees Management', href: '/admin/fees', icon: IndianRupee, roles: ['admin'] },
   { name: 'Schedules', href: '/schedules', icon: CalendarDays, roles: ['admin'] },
   { name: 'Locations', href: '/admin/locations', icon: MapPin, roles: ['admin'] },
+  { name: 'Holidays', href: '/admin/holidays', icon: CalendarDays, roles: ['admin'] },
   { name: 'Reports', href: '/admin/reports', icon: BarChart3, roles: ['admin'] },
   { name: 'User Accounts', href: '/admin/users', icon: UserPlus, roles: ['admin'] },
 ];
@@ -52,6 +53,7 @@ const teacherNavigation: NavItem[] = [
   { name: 'Live Sessions', href: '/live-sessions', icon: Video },
   { name: 'Secure Attendance', href: '/secure-attendance', icon: Shield },
   { name: 'Schedules', href: '/schedules', icon: CalendarDays },
+  { name: 'Holiday Calendar', href: '/teacher/holidays', icon: Calendar },
   { name: 'Reports', href: '/attendance/reports', icon: BarChart3 },
 ];
 
@@ -72,6 +74,7 @@ const studentNavigation: NavItem[] = [
   { name: 'My Schedule', href: '/student/schedule', icon: CalendarDays },
   { name: 'Events', href: '/student/events', icon: Ticket },
   { name: 'Live Classes', href: '/live-sessions', icon: Video },
+  { name: 'Holiday Calendar', href: '/student/holidays', icon: Calendar },
   { name: 'Notices', href: '/student/notices', icon: Bell },
   { name: 'Settings', href: '/student/settings', icon: Settings },
 ];
