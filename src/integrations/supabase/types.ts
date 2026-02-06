@@ -797,6 +797,42 @@ export type Database = {
         }
         Relationships: []
       }
+      holidays: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          holiday_date: string
+          holiday_type: string
+          id: string
+          is_recurring: boolean
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          holiday_date: string
+          holiday_type?: string
+          id?: string
+          is_recurring?: boolean
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          holiday_date?: string
+          holiday_type?: string
+          id?: string
+          is_recurring?: boolean
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       interview_sessions: {
         Row: {
           candidate_email: string | null
