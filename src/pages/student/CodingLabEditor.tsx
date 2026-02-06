@@ -396,8 +396,8 @@ export default function CodingLabEditor() {
 
             <TabsContent value="problem" className="flex-1 mt-0 overflow-hidden">
               <ScrollArea className="h-full p-4">
-                <div className="prose prose-sm dark:prose-invert max-w-none">
-                  <div dangerouslySetInnerHTML={{ __html: lab.description.replace(/\n/g, '<br/>') }} />
+                <div className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap">
+                  {lab.description}
                 </div>
               </ScrollArea>
             </TabsContent>

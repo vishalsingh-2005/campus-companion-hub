@@ -28,17 +28,25 @@ function calculateDistance(
   return R * c;
 }
 
-// Generate a secure token
-function generateToken(secret: string, timestamp: number): string {
+// Generate a cryptographically secure token using HMAC-SHA256
+async function generateToken(secret: string, timestamp: number): Promise<string> {
   const data = `${secret}-${timestamp}`;
-  // Simple hash for demo - in production use crypto.subtle
-  let hash = 0;
-  for (let i = 0; i < data.length; i++) {
-    const char = data.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash;
-  }
-  return Math.abs(hash).toString(36) + timestamp.toString(36);
+  const encoder = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    'raw',
+    encoder.encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+  const signature = await crypto.subtle.sign(
+    'HMAC',
+    key,
+    encoder.encode(data)
+  );
+  const hashArray = Array.from(new Uint8Array(signature));
+  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  return hashHex.substring(0, 16);
 }
 
 serve(async (req) => {
@@ -140,7 +148,7 @@ serve(async (req) => {
       const now = Date.now();
       const rotationMs = (session.qr_rotation_interval_seconds || 30) * 1000;
       const currentWindow = Math.floor(now / rotationMs);
-      const newToken = generateToken(session.qr_secret, currentWindow);
+      const newToken = await generateToken(session.qr_secret, currentWindow);
       const expiresAt = new Date((currentWindow + 1) * rotationMs);
 
       // Update session with new token
@@ -278,8 +286,8 @@ serve(async (req) => {
       const prevWindow = currentWindow - 1;
       
       const validTokens = [
-        generateToken(session.qr_secret, currentWindow),
-        generateToken(session.qr_secret, prevWindow), // Allow previous window for latency
+        await generateToken(session.qr_secret, currentWindow),
+        await generateToken(session.qr_secret, prevWindow), // Allow previous window for latency
       ];
 
       if (!validTokens.includes(qr_token)) {
