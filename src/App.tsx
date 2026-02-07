@@ -140,6 +140,7 @@ const App = () => (
               }
             />
             <Route
+              path="/attendance"
               element={
                 <ProtectedRoute allowedRoles={['admin', 'teacher']}>
                   <Attendance />
@@ -271,6 +272,7 @@ const App = () => (
               }
             />
             <Route
+              path="/student/courses"
               element={
                 <ProtectedRoute allowedRoles={['student']}>
                   <StudentCourses />

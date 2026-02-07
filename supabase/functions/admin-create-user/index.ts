@@ -4,7 +4,7 @@ import { createRemoteJWKSet, jwtVerify } from "https://esm.sh/jose@5.9.6";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 interface CreateUserRequest {
@@ -30,18 +30,10 @@ serve(async (req: Request): Promise<Response> => {
   try {
     // Get the authorization header
     const authHeader = req.headers.get("Authorization") ?? req.headers.get("authorization");
-    if (!authHeader) {
-      console.error("No authorization header provided");
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      console.error("Missing or invalid authorization header");
       return new Response(
         JSON.stringify({ error: "Unauthorized", code: "NO_AUTH" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    if (!authHeader.startsWith("Bearer ")) {
-      console.error("Authorization header is not Bearer token");
-      return new Response(
-        JSON.stringify({ error: "Unauthorized", code: "BAD_AUTH_HEADER" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -113,17 +105,103 @@ serve(async (req: Request): Promise<Response> => {
 
     console.log(`Admin ${requesterUserId} creating user: ${email} with role: ${role}`);
 
-    // Use admin client to create the user (doesn't affect current session)
+    let userId: string;
+
+    // Try to create the user first
     const { data: newUser, error: createError } = await adminClient.auth.admin.createUser({
       email,
       password,
-      email_confirm: true, // Auto-confirm the email
-      user_metadata: {
-        full_name,
-      },
+      email_confirm: true,
+      user_metadata: { full_name },
     });
 
     if (createError) {
+      // If user already exists, look them up and link instead
+      if (createError.message?.includes("already been registered") || (createError as any).code === "email_exists") {
+        console.log(`User with email ${email} already exists, attempting to link...`);
+        
+        // Find the existing user by email
+        const { data: existingUsers, error: listError } = await adminClient.auth.admin.listUsers();
+        
+        if (listError) {
+          console.error("Failed to list users:", listError);
+          return new Response(
+            JSON.stringify({ error: "Failed to look up existing user", code: "LOOKUP_FAILED" }),
+            { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        const existingUser = existingUsers.users.find(u => u.email === email);
+        
+        if (!existingUser) {
+          return new Response(
+            JSON.stringify({ error: "User exists but could not be found. Please try a different email.", code: "USER_NOT_FOUND" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        userId = existingUser.id;
+
+        // Update password for the existing user
+        const { error: updateError } = await adminClient.auth.admin.updateUserById(userId, {
+          password,
+          email_confirm: true,
+          user_metadata: { full_name },
+        });
+
+        if (updateError) {
+          console.error("Failed to update existing user:", updateError);
+          return new Response(
+            JSON.stringify({ error: "Failed to update existing user credentials", code: "UPDATE_FAILED" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        console.log(`Updated existing user ${userId} with new credentials`);
+
+        // Check if role already assigned
+        const { data: existingRole } = await adminClient
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", userId)
+          .maybeSingle();
+
+        if (!existingRole) {
+          // Assign role
+          const { error: roleInsertError } = await adminClient
+            .from("user_roles")
+            .insert({ user_id: userId, role });
+
+          if (roleInsertError) {
+            console.error("Failed to assign role to existing user:", roleInsertError);
+          }
+        }
+
+        // Update profile
+        const { error: profileError } = await adminClient
+          .from("profiles")
+          .update({ email, full_name })
+          .eq("user_id", userId);
+
+        if (profileError) {
+          console.error("Failed to update profile:", profileError);
+        }
+
+        console.log(`Linked existing user ${userId} with role: ${role}`);
+
+        return new Response(
+          JSON.stringify({
+            success: true,
+            message: "Existing user linked successfully with updated credentials",
+            user_id: userId,
+            email,
+            was_existing: true,
+          }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Other creation errors
       console.error("Failed to create user:", createError);
       return new Response(
         JSON.stringify({ error: createError.message, code: "CREATE_FAILED" }),
@@ -131,36 +209,31 @@ serve(async (req: Request): Promise<Response> => {
       );
     }
 
-    const userId = newUser.user.id;
+    userId = newUser.user.id;
 
     // Update the profile with the email
     const { error: profileUpdateError } = await adminClient
       .from("profiles")
-      .update({ email: email, full_name: full_name })
+      .update({ email, full_name })
       .eq("user_id", userId);
 
     if (profileUpdateError) {
       console.error("Failed to update profile with email:", profileUpdateError);
-      // Not critical, continue
     }
 
     // Assign the role to the user
     const { error: roleInsertError } = await adminClient
       .from("user_roles")
-      .insert({
-        user_id: userId,
-        role: role,
-      });
+      .insert({ user_id: userId, role });
 
     if (roleInsertError) {
       console.error("Failed to assign role:", roleInsertError);
-      // User was created but role assignment failed
       return new Response(
-        JSON.stringify({ 
+        JSON.stringify({
           success: true,
           warning: "User created but role assignment failed",
           user_id: userId,
-          email: newUser.user.email 
+          email: newUser.user.email,
         }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
@@ -178,7 +251,7 @@ serve(async (req: Request): Promise<Response> => {
         .from("teachers")
         .insert({
           user_id: userId,
-          email: email,
+          email,
           first_name: firstName,
           last_name: lastName,
           teacher_id: teacherId,
@@ -187,7 +260,6 @@ serve(async (req: Request): Promise<Response> => {
 
       if (teacherInsertError) {
         console.error("Failed to create teacher record:", teacherInsertError);
-        // Continue - user can still log in, teacher record can be created manually
       } else {
         console.log(`Teacher record created with ID: ${teacherId}`);
       }
@@ -197,7 +269,7 @@ serve(async (req: Request): Promise<Response> => {
         .from("students")
         .insert({
           user_id: userId,
-          email: email,
+          email,
           first_name: firstName,
           last_name: lastName,
           student_id: studentId,
@@ -206,7 +278,6 @@ serve(async (req: Request): Promise<Response> => {
 
       if (studentInsertError) {
         console.error("Failed to create student record:", studentInsertError);
-        // Continue - user can still log in, student record can be created manually
       } else {
         console.log(`Student record created with ID: ${studentId}`);
       }
@@ -215,15 +286,14 @@ serve(async (req: Request): Promise<Response> => {
     console.log(`User created successfully: ${userId} with role: ${role}`);
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
+      JSON.stringify({
+        success: true,
         message: "User created successfully",
         user_id: userId,
-        email: newUser.user.email 
+        email: newUser.user.email,
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
-
   } catch (error: any) {
     console.error("Error in admin-create-user function:", error);
     return new Response(
