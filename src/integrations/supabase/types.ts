@@ -1822,6 +1822,45 @@ export type Database = {
           },
         ]
       }
+      user_preferences: {
+        Row: {
+          accent_color: string
+          created_at: string
+          dashboard_widgets: Json
+          font_size: string
+          id: string
+          layout_density: string
+          sidebar_collapsed: boolean
+          theme: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          accent_color?: string
+          created_at?: string
+          dashboard_widgets?: Json
+          font_size?: string
+          id?: string
+          layout_density?: string
+          sidebar_collapsed?: boolean
+          theme?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          accent_color?: string
+          created_at?: string
+          dashboard_widgets?: Json
+          font_size?: string
+          id?: string
+          layout_density?: string
+          sidebar_collapsed?: boolean
+          theme?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string

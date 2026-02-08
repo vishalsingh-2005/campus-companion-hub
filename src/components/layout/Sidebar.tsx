@@ -14,35 +14,51 @@ import {
   Video,
   MapPin,
   IndianRupee,
+  Code2,
+  Calendar,
+  Megaphone,
+  BarChart3 as ChartBar,
+  UserCheck,
+  Ticket,
+  Settings,
+  UserPlus,
+  BarChart3,
+  CalendarDays,
+  FileText,
+  ClipboardCheck,
+  CalendarCheck,
+  Bell,
+  ChevronsLeft,
+  ChevronsRight,
+  User as UserIcon,
 } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { UserPlus, BarChart3, CalendarDays } from 'lucide-react';
 import { useUserRole } from '@/hooks/useUserRole';
 import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { usePreferences } from '@/contexts/PreferencesContext';
 
 interface NavItem {
   name: string;
   href: string;
   icon: React.ComponentType<{ className?: string }>;
-  roles?: ('admin' | 'teacher' | 'student' | 'event_organizer')[];
 }
-
-import { Code2, Calendar, Megaphone, BarChart3 as ChartBar, UserCheck, Ticket } from 'lucide-react';
 
 const adminNavigation: NavItem[] = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'Students', href: '/students', icon: GraduationCap, roles: ['admin'] },
-  { name: 'Teachers', href: '/teachers', icon: Users, roles: ['admin'] },
-  { name: 'Event Organizers', href: '/admin/organizers', icon: Calendar, roles: ['admin'] },
-  { name: 'Courses', href: '/courses', icon: BookOpen, roles: ['admin'] },
-  { name: 'Enrollments', href: '/enrollments', icon: ClipboardList, roles: ['admin'] },
-  { name: 'Fees Management', href: '/admin/fees', icon: IndianRupee, roles: ['admin'] },
-  { name: 'Schedules', href: '/schedules', icon: CalendarDays, roles: ['admin'] },
-  { name: 'Locations', href: '/admin/locations', icon: MapPin, roles: ['admin'] },
-  { name: 'Holidays', href: '/admin/holidays', icon: CalendarDays, roles: ['admin'] },
-  { name: 'Reports', href: '/admin/reports', icon: BarChart3, roles: ['admin'] },
-  { name: 'User Accounts', href: '/admin/users', icon: UserPlus, roles: ['admin'] },
+  { name: 'Students', href: '/students', icon: GraduationCap },
+  { name: 'Teachers', href: '/teachers', icon: Users },
+  { name: 'Event Organizers', href: '/admin/organizers', icon: Calendar },
+  { name: 'Courses', href: '/courses', icon: BookOpen },
+  { name: 'Enrollments', href: '/enrollments', icon: ClipboardList },
+  { name: 'Fees Management', href: '/admin/fees', icon: IndianRupee },
+  { name: 'Schedules', href: '/schedules', icon: CalendarDays },
+  { name: 'Locations', href: '/admin/locations', icon: MapPin },
+  { name: 'Holidays', href: '/admin/holidays', icon: CalendarDays },
+  { name: 'Reports', href: '/admin/reports', icon: BarChart3 },
+  { name: 'User Accounts', href: '/admin/users', icon: UserPlus },
+  { name: 'Settings', href: '/admin/settings', icon: Settings },
 ];
 
 const teacherNavigation: NavItem[] = [
@@ -55,11 +71,8 @@ const teacherNavigation: NavItem[] = [
   { name: 'Schedules', href: '/schedules', icon: CalendarDays },
   { name: 'Holiday Calendar', href: '/teacher/holidays', icon: Calendar },
   { name: 'Reports', href: '/attendance/reports', icon: BarChart3 },
+  { name: 'Settings', href: '/teacher/settings', icon: Settings },
 ];
-
-import { Settings, User as UserIcon, Bell } from 'lucide-react';
-
-import { FileText, ClipboardCheck, CalendarCheck } from 'lucide-react';
 
 const studentNavigation: NavItem[] = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -86,21 +99,23 @@ const organizerNavigation: NavItem[] = [
   { name: 'Announcements', href: '/organizer/announcements', icon: Megaphone },
   { name: 'Analytics', href: '/organizer/analytics', icon: ChartBar },
   { name: 'Live Sessions', href: '/live-sessions', icon: Video },
+  { name: 'Settings', href: '/organizer/settings', icon: Settings },
 ];
 
 export function Sidebar() {
   const location = useLocation();
   const navigate = useNavigate();
   const { signOut, user } = useAuth();
-  const { role, isAdmin, isTeacher, isStudent, isEventOrganizer } = useUserRole();
+  const { isAdmin, isTeacher, isStudent, isEventOrganizer } = useUserRole();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { preferences, updatePreference } = usePreferences();
+  const collapsed = preferences.sidebar_collapsed;
 
   const handleSignOut = async () => {
     await signOut();
     navigate('/auth');
   };
 
-  // Get navigation based on role
   const getNavigation = () => {
     if (isAdmin) return adminNavigation;
     if (isTeacher) return teacherNavigation;
@@ -136,83 +151,177 @@ export function Sidebar() {
         </span>
       );
     }
-    return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground">
-        <User className="h-3 w-3" />
-        User
-      </span>
-    );
+    if (isEventOrganizer) {
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-purple-500/20 text-purple-400">
+          <Calendar className="h-3 w-3" />
+          Organizer
+        </span>
+      );
+    }
+    return null;
   };
 
   const getRoleLabel = () => {
     if (isAdmin) return 'Administrator';
     if (isTeacher) return 'Teacher';
     if (isStudent) return 'Student';
+    if (isEventOrganizer) return 'Organizer';
     return 'User';
   };
 
-  const NavContent = () => (
-    <>
-      <div className="flex h-16 items-center gap-3 px-6 border-b border-sidebar-border">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl gradient-primary shadow-glow">
-          <GraduationCap className="h-5 w-5 text-sidebar-primary-foreground" />
-        </div>
-        <div className="flex flex-col">
-          <span className="text-lg font-bold text-sidebar-foreground">CMS</span>
-          <span className="text-xs text-sidebar-foreground/60">College Management</span>
-        </div>
-      </div>
+  const NavLink = ({ item }: { item: NavItem }) => {
+    const isActive = location.pathname === item.href;
 
-      <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
-        {navigation.map((item) => {
-          const isActive = location.pathname === item.href;
-          return (
+    if (collapsed) {
+      return (
+        <Tooltip delayDuration={0}>
+          <TooltipTrigger asChild>
             <Link
-              key={item.name}
               to={item.href}
               onClick={() => setMobileMenuOpen(false)}
               className={cn(
-                'flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200',
+                'flex items-center justify-center p-3 rounded-lg transition-all duration-200',
                 isActive
                   ? 'bg-sidebar-primary text-sidebar-primary-foreground shadow-glow'
                   : 'text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent'
               )}
             >
               <item.icon className="h-5 w-5" />
-              {item.name}
             </Link>
-          );
-        })}
-      </nav>
+          </TooltipTrigger>
+          <TooltipContent side="right" sideOffset={8}>
+            {item.name}
+          </TooltipContent>
+        </Tooltip>
+      );
+    }
 
-      <div className="p-4 border-t border-sidebar-border">
-        <div className="flex items-center gap-3 px-4 py-3 mb-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-sidebar-accent text-sidebar-foreground text-sm font-medium">
-            {user?.email?.charAt(0).toUpperCase()}
+    return (
+      <Link
+        to={item.href}
+        onClick={() => setMobileMenuOpen(false)}
+        className={cn(
+          'flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200',
+          isActive
+            ? 'bg-sidebar-primary text-sidebar-primary-foreground shadow-glow'
+            : 'text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent'
+        )}
+      >
+        <item.icon className="h-5 w-5" />
+        {item.name}
+      </Link>
+    );
+  };
+
+  const NavContent = ({ isMobile = false }: { isMobile?: boolean }) => {
+    const showExpanded = isMobile || !collapsed;
+
+    return (
+      <>
+        <div className={cn(
+          'flex h-16 items-center border-b border-sidebar-border',
+          showExpanded ? 'gap-3 px-6' : 'justify-center px-2'
+        )}>
+          <div className={cn(
+            'flex items-center justify-center rounded-xl gradient-primary shadow-glow',
+            showExpanded ? 'h-10 w-10' : 'h-9 w-9'
+          )}>
+            <GraduationCap className={cn(
+              'text-sidebar-primary-foreground',
+              showExpanded ? 'h-5 w-5' : 'h-4 w-4'
+            )} />
           </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <p className="text-sm font-medium text-sidebar-foreground truncate">
-                {getRoleLabel()}
-              </p>
-              {getRoleBadge()}
+          {showExpanded && (
+            <div className="flex flex-col flex-1">
+              <span className="text-lg font-bold text-sidebar-foreground">CMS</span>
+              <span className="text-xs text-sidebar-foreground/60">College Management</span>
             </div>
-            <p className="text-xs text-sidebar-foreground/60 truncate">
-              {user?.email}
-            </p>
-          </div>
+          )}
+          {!isMobile && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 text-sidebar-foreground/50 hover:text-sidebar-foreground hidden lg:flex"
+              onClick={() => updatePreference('sidebar_collapsed', !collapsed)}
+            >
+              {collapsed ? (
+                <ChevronsRight className="h-4 w-4" />
+              ) : (
+                <ChevronsLeft className="h-4 w-4" />
+              )}
+            </Button>
+          )}
         </div>
-        <Button
-          onClick={handleSignOut}
-          variant="ghost"
-          className="w-full justify-start gap-3 text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent"
-        >
-          <LogOut className="h-5 w-5" />
-          Sign Out
-        </Button>
-      </div>
-    </>
-  );
+
+        <nav className={cn(
+          'flex-1 py-6 space-y-1 overflow-y-auto',
+          showExpanded ? 'px-4' : 'px-2'
+        )}>
+          {navigation.map((item) => (
+            <NavLink key={item.name} item={item} />
+          ))}
+        </nav>
+
+        <div className="p-4 border-t border-sidebar-border">
+          {showExpanded ? (
+            <>
+              <div className="flex items-center gap-3 px-4 py-3 mb-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-sidebar-accent text-sidebar-foreground text-sm font-medium flex-shrink-0">
+                  {user?.email?.charAt(0).toUpperCase()}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-medium text-sidebar-foreground truncate">
+                      {getRoleLabel()}
+                    </p>
+                    {getRoleBadge()}
+                  </div>
+                  <p className="text-xs text-sidebar-foreground/60 truncate">
+                    {user?.email}
+                  </p>
+                </div>
+              </div>
+              <Button
+                onClick={handleSignOut}
+                variant="ghost"
+                className="w-full justify-start gap-3 text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent"
+              >
+                <LogOut className="h-5 w-5" />
+                Sign Out
+              </Button>
+            </>
+          ) : (
+            <div className="flex flex-col items-center gap-2">
+              <Tooltip delayDuration={0}>
+                <TooltipTrigger asChild>
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-sidebar-accent text-sidebar-foreground text-sm font-medium">
+                    {user?.email?.charAt(0).toUpperCase()}
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="right">{user?.email}</TooltipContent>
+              </Tooltip>
+              <Tooltip delayDuration={0}>
+                <TooltipTrigger asChild>
+                  <Button
+                    onClick={handleSignOut}
+                    variant="ghost"
+                    size="icon"
+                    className="text-sidebar-foreground/70 hover:text-sidebar-foreground"
+                  >
+                    <LogOut className="h-5 w-5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="right">Sign Out</TooltipContent>
+              </Tooltip>
+            </div>
+          )}
+        </div>
+      </>
+    );
+  };
+
+  const sidebarWidth = collapsed ? 'w-[68px]' : 'w-72';
 
   return (
     <>
@@ -233,18 +342,23 @@ export function Sidebar() {
         />
       )}
 
-      {/* Mobile sidebar */}
+      {/* Mobile sidebar - always expanded */}
       <aside
         className={cn(
           'lg:hidden fixed inset-y-0 left-0 z-40 w-72 bg-sidebar flex flex-col transition-transform duration-300',
           mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >
-        <NavContent />
+        <NavContent isMobile />
       </aside>
 
       {/* Desktop sidebar */}
-      <aside className="hidden lg:flex fixed inset-y-0 left-0 z-40 w-72 bg-sidebar flex-col">
+      <aside
+        className={cn(
+          'hidden lg:flex fixed inset-y-0 left-0 z-40 bg-sidebar flex-col transition-all duration-300',
+          sidebarWidth
+        )}
+      >
         <NavContent />
       </aside>
     </>
