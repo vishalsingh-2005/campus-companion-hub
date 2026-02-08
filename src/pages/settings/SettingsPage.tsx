@@ -1,28 +1,16 @@
-import { useState } from 'react';
 import { PageHeader } from '@/components/ui/page-header';
+import { InterfaceCustomizer } from '@/components/settings/InterfaceCustomizer';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { 
-  Lock, 
-  Smartphone, 
-  Shield,
-  Loader2,
-  Eye,
-  EyeOff
-} from 'lucide-react';
+import { Lock, Eye, EyeOff, Loader2, Settings } from 'lucide-react';
+import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { InterfaceCustomizer } from '@/components/settings/InterfaceCustomizer';
-import { useDeviceFingerprint } from '@/hooks/useSecureAttendance';
 
-export default function StudentSettings() {
-  const { user } = useAuth();
+export default function SettingsPage() {
   const { toast } = useToast();
-  const { fingerprint } = useDeviceFingerprint();
-  
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -56,14 +44,6 @@ export default function StudentSettings() {
     }
   };
 
-  const deviceInfo = {
-    browser: navigator.userAgent.match(/(firefox|chrome|safari|opera|edge)/i)?.[0] || 'Unknown',
-    os: navigator.platform,
-    screenSize: `${window.screen.width}x${window.screen.height}`,
-    language: navigator.language,
-    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-  };
-
   return (
     <div className="space-y-6 animate-fade-in">
       <PageHeader
@@ -77,9 +57,8 @@ export default function StudentSettings() {
           <InterfaceCustomizer />
         </div>
 
-        {/* Right: Account & Device */}
+        {/* Right: Account Settings */}
         <div className="space-y-6">
-          {/* Change Password */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -99,7 +78,13 @@ export default function StudentSettings() {
                       onChange={(e) => setCurrentPassword(e.target.value)}
                       placeholder="Enter current password"
                     />
-                    <Button type="button" variant="ghost" size="icon" className="absolute right-0 top-0 h-full px-3" onClick={() => setShowCurrentPassword(!showCurrentPassword)}>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-0 top-0 h-full px-3"
+                      onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                    >
                       {showCurrentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </Button>
                   </div>
@@ -113,7 +98,13 @@ export default function StudentSettings() {
                       onChange={(e) => setNewPassword(e.target.value)}
                       placeholder="Enter new password"
                     />
-                    <Button type="button" variant="ghost" size="icon" className="absolute right-0 top-0 h-full px-3" onClick={() => setShowNewPassword(!showNewPassword)}>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-0 top-0 h-full px-3"
+                      onClick={() => setShowNewPassword(!showNewPassword)}
+                    >
                       {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </Button>
                   </div>
@@ -127,61 +118,32 @@ export default function StudentSettings() {
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       placeholder="Confirm new password"
                     />
-                    <Button type="button" variant="ghost" size="icon" className="absolute right-0 top-0 h-full px-3" onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-0 top-0 h-full px-3"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    >
                       {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </Button>
                   </div>
                 </div>
-                <Button type="submit" className="w-full" disabled={isChangingPassword || !currentPassword || !newPassword || !confirmPassword}>
-                  {isChangingPassword ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Updating...</> : 'Update Password'}
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={isChangingPassword || !currentPassword || !newPassword || !confirmPassword}
+                >
+                  {isChangingPassword ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Updating...
+                    </>
+                  ) : (
+                    'Update Password'
+                  )}
                 </Button>
               </form>
-            </CardContent>
-          </Card>
-
-          {/* Device Information */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Smartphone className="h-5 w-5 text-primary" />
-                Device Information
-              </CardTitle>
-              <CardDescription>Your current device details</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="p-3 rounded-lg bg-muted/50 border">
-                  <p className="text-xs text-muted-foreground">Device ID</p>
-                  <p className="font-mono text-sm truncate">{fingerprint || 'Generating...'}</p>
-                </div>
-                <div className="p-3 rounded-lg bg-muted/50 border">
-                  <p className="text-xs text-muted-foreground">Browser</p>
-                  <p className="font-medium capitalize text-sm">{deviceInfo.browser}</p>
-                </div>
-                <div className="p-3 rounded-lg bg-muted/50 border">
-                  <p className="text-xs text-muted-foreground">OS</p>
-                  <p className="font-medium text-sm">{deviceInfo.os}</p>
-                </div>
-                <div className="p-3 rounded-lg bg-muted/50 border">
-                  <p className="text-xs text-muted-foreground">Timezone</p>
-                  <p className="font-medium text-sm">{deviceInfo.timezone}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Security Notice */}
-          <Card className="border-primary/30 bg-primary/5">
-            <CardContent className="flex items-start gap-4 py-4">
-              <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                <Shield className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <p className="font-medium">One Device Policy</p>
-                <p className="text-sm text-muted-foreground">
-                  For security purposes, your account can only be used on one device at a time.
-                </p>
-              </div>
             </CardContent>
           </Card>
         </div>
