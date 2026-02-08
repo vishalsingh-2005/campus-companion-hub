@@ -26,10 +26,10 @@ const createUserSchema = z.object({
   email: z.string().email('Invalid email address'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
   fullName: z.string().min(2, 'Name must be at least 2 characters'),
-  role: z.enum(['teacher', 'student', 'event_organizer'], { required_error: 'Please select a role' }),
+  role: z.enum(['admin', 'teacher', 'student', 'event_organizer'], { required_error: 'Please select a role' }),
 });
 
-type UserRole = 'teacher' | 'student' | 'event_organizer';
+type UserRole = 'admin' | 'teacher' | 'student' | 'event_organizer';
 
 interface CreateUserDialogProps {
   open: boolean;
@@ -101,6 +101,7 @@ export function CreateUserDialog({
       }
     } else if (userId) {
       const roleLabels: Record<UserRole, string> = {
+        admin: 'Admin',
         teacher: 'Teacher',
         student: 'Student',
         event_organizer: 'Event Organizer',
@@ -145,6 +146,7 @@ export function CreateUserDialog({
                   <SelectValue placeholder="Select a role" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="admin">Admin</SelectItem>
                   <SelectItem value="teacher">Teacher</SelectItem>
                   <SelectItem value="student">Student</SelectItem>
                   <SelectItem value="event_organizer">Event Organizer</SelectItem>
