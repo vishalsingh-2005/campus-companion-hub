@@ -12,7 +12,7 @@ export function useCreateUser() {
   const createUserAccount = async (
     email: string,
     password: string,
-    role: 'teacher' | 'student' | 'event_organizer',
+    role: 'admin' | 'teacher' | 'student' | 'event_organizer',
     fullName: string
   ): Promise<CreateUserResult> => {
     setIsCreating(true);

@@ -11,7 +11,7 @@ interface CreateUserRequest {
   email: string;
   password: string;
   full_name: string;
-  role: "teacher" | "student" | "event_organizer";
+  role: "admin" | "teacher" | "student" | "event_organizer";
 }
 
 // Generate a unique ID for teacher/student records
@@ -96,9 +96,9 @@ serve(async (req: Request): Promise<Response> => {
       );
     }
 
-    if (!["teacher", "student", "event_organizer"].includes(role)) {
+    if (!["admin", "teacher", "student", "event_organizer"].includes(role)) {
       return new Response(
-        JSON.stringify({ error: "Invalid role. Must be 'teacher', 'student', or 'event_organizer'", code: "INVALID_ROLE" }),
+        JSON.stringify({ error: "Invalid role. Must be 'admin', 'teacher', 'student', or 'event_organizer'", code: "INVALID_ROLE" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
