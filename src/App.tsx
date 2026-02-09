@@ -7,6 +7,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import { PreferencesProvider } from "@/contexts/PreferencesContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import AccessDenied from "./pages/AccessDenied";
@@ -90,7 +91,7 @@ const App = () => (
                 path="/admin/dashboard"
                 element={
                   <ProtectedRoute allowedRoles={['admin']}>
-                    <AdminDashboard />
+                    <DashboardLayout><AdminDashboard /></DashboardLayout>
                   </ProtectedRoute>
                 }
               />
@@ -236,7 +237,7 @@ const App = () => (
                 path="/teacher/dashboard"
                 element={
                   <ProtectedRoute allowedRoles={['teacher']}>
-                    <TeacherDashboard />
+                    <DashboardLayout><TeacherDashboard /></DashboardLayout>
                   </ProtectedRoute>
                 }
               />
@@ -294,7 +295,7 @@ const App = () => (
                 path="/student/dashboard"
                 element={
                   <ProtectedRoute allowedRoles={['student']}>
-                    <StudentDashboard />
+                    <DashboardLayout><StudentDashboard /></DashboardLayout>
                   </ProtectedRoute>
                 }
               />
@@ -424,7 +425,7 @@ const App = () => (
                 path="/organizer/dashboard"
                 element={
                   <ProtectedRoute allowedRoles={['event_organizer']}>
-                    <OrganizerDashboard />
+                    <DashboardLayout><OrganizerDashboard /></DashboardLayout>
                   </ProtectedRoute>
                 }
               />
