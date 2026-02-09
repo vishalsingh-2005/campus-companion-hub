@@ -31,6 +31,7 @@ import {
   ChevronsLeft,
   ChevronsRight,
   User as UserIcon,
+  MessageSquare,
 } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -56,6 +57,7 @@ const adminNavigation: NavItem[] = [
   { name: 'Schedules', href: '/schedules', icon: CalendarDays },
   { name: 'Locations', href: '/admin/locations', icon: MapPin },
   { name: 'Holidays', href: '/admin/holidays', icon: CalendarDays },
+  { name: 'Messages', href: '/messages', icon: MessageSquare },
   { name: 'Reports', href: '/admin/reports', icon: BarChart3 },
   { name: 'User Accounts', href: '/admin/users', icon: UserPlus },
   { name: 'Settings', href: '/admin/settings', icon: Settings },
@@ -70,6 +72,7 @@ const teacherNavigation: NavItem[] = [
   { name: 'Secure Attendance', href: '/secure-attendance', icon: Shield },
   { name: 'Schedules', href: '/schedules', icon: CalendarDays },
   { name: 'Holiday Calendar', href: '/teacher/holidays', icon: Calendar },
+  { name: 'Messages', href: '/messages', icon: MessageSquare },
   { name: 'Reports', href: '/attendance/reports', icon: BarChart3 },
   { name: 'Settings', href: '/teacher/settings', icon: Settings },
 ];
@@ -88,6 +91,7 @@ const studentNavigation: NavItem[] = [
   { name: 'Events', href: '/student/events', icon: Ticket },
   { name: 'Live Classes', href: '/live-sessions', icon: Video },
   { name: 'Holiday Calendar', href: '/student/holidays', icon: Calendar },
+  { name: 'Messages', href: '/messages', icon: MessageSquare },
   { name: 'Notices', href: '/student/notices', icon: Bell },
   { name: 'Settings', href: '/student/settings', icon: Settings },
 ];
@@ -99,6 +103,7 @@ const organizerNavigation: NavItem[] = [
   { name: 'Announcements', href: '/organizer/announcements', icon: Megaphone },
   { name: 'Analytics', href: '/organizer/analytics', icon: ChartBar },
   { name: 'Live Sessions', href: '/live-sessions', icon: Video },
+  { name: 'Messages', href: '/messages', icon: MessageSquare },
   { name: 'Settings', href: '/organizer/settings', icon: Settings },
 ];
 

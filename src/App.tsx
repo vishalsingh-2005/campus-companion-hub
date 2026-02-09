@@ -57,6 +57,7 @@ import StudentHolidays from "./pages/student/StudentHolidays";
 import TeacherHolidays from "./pages/teacher/TeacherHolidays";
 import HolidaysManagement from "./pages/admin/HolidaysManagement";
 import SettingsPage from "./pages/settings/SettingsPage";
+import MessagesPage from "./pages/MessagesPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -75,6 +76,16 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/access-denied" element={<AccessDenied />} />
+
+              {/* Messages - accessible to all authenticated users */}
+              <Route
+                path="/messages"
+                element={
+                  <ProtectedRoute>
+                    <MessagesPage />
+                  </ProtectedRoute>
+                }
+              />
 
               {/* Role-based dashboard redirects */}
               <Route
