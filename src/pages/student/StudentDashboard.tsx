@@ -22,7 +22,8 @@ import {
   Percent,
   Calendar,
   Megaphone,
-  PartyPopper
+  PartyPopper,
+  MessageSquare
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -32,6 +33,8 @@ import { cn } from '@/lib/utils';
 import { DAYS_OF_WEEK } from '@/types/schedule';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
+import { useMessages } from '@/hooks/useMessages';
 
 interface StudentData {
   id: string;
@@ -134,6 +137,7 @@ function formatTime(time: string) {
 
 export default function StudentDashboard() {
   const { user } = useAuth();
+  const { unreadCount: unreadMessages } = useMessages();
   const [loading, setLoading] = useState(true);
   const [studentData, setStudentData] = useState<StudentData | null>(null);
   const [enrollments, setEnrollments] = useState<EnrollmentData[]>([]);
@@ -401,8 +405,96 @@ export default function StudentDashboard() {
         />
       </div>
 
+      {/* Attendance Charts */}
+      {attendance.length > 0 && (
+        <div className="grid gap-6 md:grid-cols-2">
+          {/* Attendance Pie Chart */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Percent className="h-5 w-5 text-primary" />
+                Attendance Breakdown
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[200px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={[
+                        { name: 'Present', value: attendanceStats.present, fill: 'hsl(var(--success))' },
+                        { name: 'Absent', value: attendanceStats.absent, fill: 'hsl(var(--destructive))' },
+                        { name: 'Late', value: attendanceStats.late, fill: 'hsl(var(--warning))' },
+                      ].filter(d => d.value > 0)}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={50}
+                      outerRadius={80}
+                      paddingAngle={3}
+                      dataKey="value"
+                    >
+                    </Pie>
+                    <RechartsTooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="flex justify-center gap-4 mt-2">
+                <div className="flex items-center gap-1.5 text-sm">
+                  <span className="h-3 w-3 rounded-full bg-success" />
+                  Present ({attendanceStats.present})
+                </div>
+                <div className="flex items-center gap-1.5 text-sm">
+                  <span className="h-3 w-3 rounded-full bg-destructive" />
+                  Absent ({attendanceStats.absent})
+                </div>
+                <div className="flex items-center gap-1.5 text-sm">
+                  <span className="h-3 w-3 rounded-full bg-warning" />
+                  Late ({attendanceStats.late})
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Per-Course Attendance Bar Chart */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <BookOpen className="h-5 w-5 text-primary" />
+                Attendance by Course
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[240px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={(() => {
+                    const courseMap = new Map<string, { present: number; total: number; code: string }>();
+                    attendance.forEach(a => {
+                      const code = a.courses?.course_code || 'N/A';
+                      const existing = courseMap.get(code) || { present: 0, total: 0, code };
+                      existing.total++;
+                      if (a.status === 'present' || a.status === 'late') existing.present++;
+                      courseMap.set(code, existing);
+                    });
+                    return Array.from(courseMap.values()).map(c => ({
+                      course: c.code,
+                      rate: c.total > 0 ? Math.round((c.present / c.total) * 100) : 0,
+                    }));
+                  })()}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                    <XAxis dataKey="course" className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                    <YAxis domain={[0, 100]} tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                    <RechartsTooltip />
+                    <Bar dataKey="rate" name="Attendance %" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       {/* Quick Actions */}
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
         <Link to="/student/mark-attendance" className="group">
           <Card className="h-full transition-all hover:shadow-md hover:border-primary/50">
             <CardContent className="flex items-center gap-4 p-4">
@@ -444,6 +536,26 @@ export default function StudentDashboard() {
                 <p className="text-sm text-muted-foreground">Full history</p>
               </div>
               <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-success transition-colors" />
+            </CardContent>
+          </Card>
+        </Link>
+
+        <Link to="/messages" className="group">
+          <Card className="h-full transition-all hover:shadow-md hover:border-primary/50">
+            <CardContent className="flex items-center gap-4 p-4">
+              <div className="h-12 w-12 rounded-xl bg-violet-500/10 flex items-center justify-center group-hover:bg-violet-500/20 transition-colors relative">
+                <MessageSquare className="h-6 w-6 text-violet-500" />
+                {unreadMessages > 0 && (
+                  <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-destructive text-destructive-foreground text-xs flex items-center justify-center">
+                    {unreadMessages}
+                  </span>
+                )}
+              </div>
+              <div className="flex-1">
+                <p className="font-semibold">Messages</p>
+                <p className="text-sm text-muted-foreground">{unreadMessages > 0 ? `${unreadMessages} unread` : 'Inbox'}</p>
+              </div>
+              <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-violet-500 transition-colors" />
             </CardContent>
           </Card>
         </Link>
