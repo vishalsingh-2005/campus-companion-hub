@@ -41,6 +41,8 @@ import Reports from "./pages/admin/Reports";
 import ClassroomLocations from "./pages/admin/ClassroomLocations";
 import EventOrganizers from "./pages/admin/EventOrganizers";
 import FeesManagement from "./pages/admin/FeesManagement";
+import LibraryManagement from "./pages/admin/LibraryManagement";
+import ProfileApprovals from "./pages/admin/ProfileApprovals";
 import OrganizerDashboard from "./pages/organizer/OrganizerDashboard";
 import EventsManagement from "./pages/organizer/EventsManagement";
 import EventAttendance from "./pages/organizer/EventAttendance";
@@ -54,7 +56,12 @@ import LiveSessions from "./pages/LiveSessions";
 import LiveRoom from "./pages/LiveRoom";
 import StudentFees from "./pages/student/StudentFees";
 import StudentHolidays from "./pages/student/StudentHolidays";
+import StudentLibrary from "./pages/student/StudentLibrary";
+import StudentAssignments from "./pages/student/StudentAssignments";
+import StudentLeave from "./pages/student/StudentLeave";
 import TeacherHolidays from "./pages/teacher/TeacherHolidays";
+import TeacherAssignments from "./pages/teacher/TeacherAssignments";
+import TeacherLeave from "./pages/teacher/TeacherLeave";
 import HolidaysManagement from "./pages/admin/HolidaysManagement";
 import SettingsPage from "./pages/settings/SettingsPage";
 import MessagesPage from "./pages/MessagesPage";
@@ -151,6 +158,22 @@ const App = () => (
                 element={
                   <ProtectedRoute allowedRoles={['admin']}>
                     <HolidaysManagement />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/library"
+                element={
+                  <ProtectedRoute allowedRoles={['admin']}>
+                    <LibraryManagement />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/profile-approvals"
+                element={
+                  <ProtectedRoute allowedRoles={['admin']}>
+                    <ProfileApprovals />
                   </ProtectedRoute>
                 }
               />
@@ -300,6 +323,22 @@ const App = () => (
                   </ProtectedRoute>
                 }
               />
+              <Route
+                path="/teacher/assignments"
+                element={
+                  <ProtectedRoute allowedRoles={['teacher']}>
+                    <TeacherAssignments />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/teacher/leave"
+                element={
+                  <ProtectedRoute allowedRoles={['teacher']}>
+                    <TeacherLeave />
+                  </ProtectedRoute>
+                }
+              />
 
               {/* Student routes */}
               <Route
@@ -427,6 +466,30 @@ const App = () => (
                 element={
                   <ProtectedRoute allowedRoles={['student']}>
                     <StudentFees />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/student/library"
+                element={
+                  <ProtectedRoute allowedRoles={['student']}>
+                    <StudentLibrary />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/student/assignments"
+                element={
+                  <ProtectedRoute allowedRoles={['student']}>
+                    <StudentAssignments />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/student/leave"
+                element={
+                  <ProtectedRoute allowedRoles={['student']}>
+                    <StudentLeave />
                   </ProtectedRoute>
                 }
               />

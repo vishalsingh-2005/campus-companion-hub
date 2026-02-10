@@ -14,6 +14,132 @@ export type Database = {
   }
   public: {
     Tables: {
+      assignment_submissions: {
+        Row: {
+          assignment_id: string
+          created_at: string
+          feedback: string | null
+          file_name: string | null
+          file_url: string | null
+          graded_at: string | null
+          graded_by: string | null
+          id: string
+          marks: number | null
+          status: string
+          student_id: string
+          submission_text: string | null
+          submitted_at: string
+          updated_at: string
+        }
+        Insert: {
+          assignment_id: string
+          created_at?: string
+          feedback?: string | null
+          file_name?: string | null
+          file_url?: string | null
+          graded_at?: string | null
+          graded_by?: string | null
+          id?: string
+          marks?: number | null
+          status?: string
+          student_id: string
+          submission_text?: string | null
+          submitted_at?: string
+          updated_at?: string
+        }
+        Update: {
+          assignment_id?: string
+          created_at?: string
+          feedback?: string | null
+          file_name?: string | null
+          file_url?: string | null
+          graded_at?: string | null
+          graded_by?: string | null
+          id?: string
+          marks?: number | null
+          status?: string
+          student_id?: string
+          submission_text?: string | null
+          submitted_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assignment_submissions_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: false
+            referencedRelation: "assignments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assignment_submissions_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assignments: {
+        Row: {
+          course_id: string
+          created_at: string
+          description: string | null
+          due_date: string
+          file_name: string | null
+          file_url: string | null
+          id: string
+          max_marks: number
+          status: string
+          teacher_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          course_id: string
+          created_at?: string
+          description?: string | null
+          due_date: string
+          file_name?: string | null
+          file_url?: string | null
+          id?: string
+          max_marks?: number
+          status?: string
+          teacher_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          course_id?: string
+          created_at?: string
+          description?: string | null
+          due_date?: string
+          file_name?: string | null
+          file_url?: string | null
+          id?: string
+          max_marks?: number
+          status?: string
+          teacher_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assignments_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assignments_teacher_id_fkey"
+            columns: ["teacher_id"]
+            isOneToOne: false
+            referencedRelation: "teachers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       attendance: {
         Row: {
           attendance_date: string
@@ -58,6 +184,111 @@ export type Database = {
           },
           {
             foreignKeyName: "attendance_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      book_issues: {
+        Row: {
+          book_id: string
+          created_at: string
+          due_date: string
+          id: string
+          issue_date: string
+          issued_by: string | null
+          notes: string | null
+          return_date: string | null
+          status: string
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          book_id: string
+          created_at?: string
+          due_date?: string
+          id?: string
+          issue_date?: string
+          issued_by?: string | null
+          notes?: string | null
+          return_date?: string | null
+          status?: string
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          book_id?: string
+          created_at?: string
+          due_date?: string
+          id?: string
+          issue_date?: string
+          issued_by?: string | null
+          notes?: string | null
+          return_date?: string | null
+          status?: string
+          student_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "book_issues_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "library_books"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "book_issues_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      book_requests: {
+        Row: {
+          admin_notes: string | null
+          book_id: string
+          created_at: string
+          id: string
+          request_date: string
+          status: string
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          book_id: string
+          created_at?: string
+          id?: string
+          request_date?: string
+          status?: string
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          admin_notes?: string | null
+          book_id?: string
+          created_at?: string
+          id?: string
+          request_date?: string
+          status?: string
+          student_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "book_requests_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "library_books"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "book_requests_student_id_fkey"
             columns: ["student_id"]
             isOneToOne: false
             referencedRelation: "students"
@@ -896,6 +1127,110 @@ export type Database = {
           },
         ]
       }
+      leave_requests: {
+        Row: {
+          created_at: string
+          end_date: string
+          id: string
+          leave_type: string
+          reason: string
+          remarks: string | null
+          reviewed_at: string | null
+          reviewer_id: string | null
+          reviewer_role: string | null
+          start_date: string
+          status: string
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          end_date: string
+          id?: string
+          leave_type?: string
+          reason: string
+          remarks?: string | null
+          reviewed_at?: string | null
+          reviewer_id?: string | null
+          reviewer_role?: string | null
+          start_date: string
+          status?: string
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          end_date?: string
+          id?: string
+          leave_type?: string
+          reason?: string
+          remarks?: string | null
+          reviewed_at?: string | null
+          reviewer_id?: string | null
+          reviewer_role?: string | null
+          start_date?: string
+          status?: string
+          student_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leave_requests_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      library_books: {
+        Row: {
+          added_by: string | null
+          author: string
+          available_quantity: number
+          category: string
+          created_at: string
+          description: string | null
+          id: string
+          isbn: string | null
+          published_year: number | null
+          publisher: string | null
+          title: string
+          total_quantity: number
+          updated_at: string
+        }
+        Insert: {
+          added_by?: string | null
+          author: string
+          available_quantity?: number
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          isbn?: string | null
+          published_year?: number | null
+          publisher?: string | null
+          title: string
+          total_quantity?: number
+          updated_at?: string
+        }
+        Update: {
+          added_by?: string | null
+          author?: string
+          available_quantity?: number
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          isbn?: string | null
+          published_year?: number | null
+          publisher?: string | null
+          title?: string
+          total_quantity?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       live_sessions: {
         Row: {
           actual_end: string | null
@@ -1005,6 +1340,50 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      profile_update_requests: {
+        Row: {
+          admin_notes: string | null
+          created_at: string
+          id: string
+          requested_changes: Json
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          created_at?: string
+          id?: string
+          requested_changes: Json
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          admin_notes?: string | null
+          created_at?: string
+          id?: string
+          requested_changes?: Json
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          student_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profile_update_requests_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -1516,15 +1895,22 @@ export type Database = {
         Row: {
           address: string | null
           avatar_url: string | null
+          city: string | null
+          course: string | null
           created_at: string
           date_of_birth: string | null
           email: string
           enrollment_date: string
+          father_name: string | null
           first_name: string
           gender: string | null
+          guardian_contact: string | null
           id: string
           last_name: string
+          mother_name: string | null
           phone: string | null
+          semester: string | null
+          state: string | null
           status: string
           student_id: string
           updated_at: string
@@ -1533,15 +1919,22 @@ export type Database = {
         Insert: {
           address?: string | null
           avatar_url?: string | null
+          city?: string | null
+          course?: string | null
           created_at?: string
           date_of_birth?: string | null
           email: string
           enrollment_date?: string
+          father_name?: string | null
           first_name: string
           gender?: string | null
+          guardian_contact?: string | null
           id?: string
           last_name: string
+          mother_name?: string | null
           phone?: string | null
+          semester?: string | null
+          state?: string | null
           status?: string
           student_id: string
           updated_at?: string
@@ -1550,15 +1943,22 @@ export type Database = {
         Update: {
           address?: string | null
           avatar_url?: string | null
+          city?: string | null
+          course?: string | null
           created_at?: string
           date_of_birth?: string | null
           email?: string
           enrollment_date?: string
+          father_name?: string | null
           first_name?: string
           gender?: string | null
+          guardian_contact?: string | null
           id?: string
           last_name?: string
+          mother_name?: string | null
           phone?: string | null
+          semester?: string | null
+          state?: string | null
           status?: string
           student_id?: string
           updated_at?: string
