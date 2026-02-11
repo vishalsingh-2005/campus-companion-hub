@@ -77,83 +77,47 @@ export default {
   		},
   		fontFamily: {
   			sans: [
-  				'Source Sans Pro',
-  				'ui-sans-serif',
+  				'Plus Jakarta Sans',
   				'system-ui',
   				'-apple-system',
   				'BlinkMacSystemFont',
   				'Segoe UI',
-  				'Roboto',
-  				'Helvetica Neue',
-  				'Arial',
-  				'Noto Sans',
   				'sans-serif'
   			],
-  			serif: [
-  				'Source Serif Pro',
-  				'ui-serif',
-  				'Georgia',
-  				'Cambria',
-  				'Times New Roman',
-  				'Times',
-  				'serif'
+  			display: [
+  				'Space Grotesk',
+  				'Plus Jakarta Sans',
+  				'system-ui',
+  				'sans-serif'
   			],
   			mono: [
-  				'Source Code Pro',
+  				'JetBrains Mono',
   				'ui-monospace',
   				'SFMono-Regular',
   				'Menlo',
-  				'Monaco',
-  				'Consolas',
-  				'Liberation Mono',
-  				'Courier New',
   				'monospace'
   			]
   		},
   		keyframes: {
   			'accordion-down': {
-  				from: {
-  					height: '0'
-  				},
-  				to: {
-  					height: 'var(--radix-accordion-content-height)'
-  				}
+  				from: { height: '0' },
+  				to: { height: 'var(--radix-accordion-content-height)' }
   			},
   			'accordion-up': {
-  				from: {
-  					height: 'var(--radix-accordion-content-height)'
-  				},
-  				to: {
-  					height: '0'
-  				}
+  				from: { height: 'var(--radix-accordion-content-height)' },
+  				to: { height: '0' }
   			},
   			'fade-in': {
-  				from: {
-  					opacity: '0'
-  				},
-  				to: {
-  					opacity: '1'
-  				}
+  				from: { opacity: '0' },
+  				to: { opacity: '1' }
   			},
   			'slide-up': {
-  				from: {
-  					opacity: '0',
-  					transform: 'translateY(20px)'
-  				},
-  				to: {
-  					opacity: '1',
-  					transform: 'translateY(0)'
-  				}
+  				from: { opacity: '0', transform: 'translateY(20px)' },
+  				to: { opacity: '1', transform: 'translateY(0)' }
   			},
   			'slide-in-left': {
-  				from: {
-  					opacity: '0',
-  					transform: 'translateX(-20px)'
-  				},
-  				to: {
-  					opacity: '1',
-  					transform: 'translateX(0)'
-  				}
+  				from: { opacity: '0', transform: 'translateX(-20px)' },
+  				to: { opacity: '1', transform: 'translateX(0)' }
   			}
   		},
   		animation: {
@@ -164,7 +128,7 @@ export default {
   			'slide-in-left': 'slide-in-left 0.3s ease-out'
   		},
   		boxShadow: {
-  			glow: '0 0 20px hsl(173 58% 39% / 0.3)',
+  			glow: '0 0 24px hsl(252 85% 60% / 0.25)',
   			'2xs': 'var(--shadow-2xs)',
   			xs: 'var(--shadow-xs)',
   			sm: 'var(--shadow-sm)',

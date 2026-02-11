@@ -19,8 +19,13 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="flex h-screen items-center justify-center bg-background gradient-mesh">
+        <div className="flex flex-col items-center gap-4">
+          <div className="relative">
+            <div className="h-12 w-12 rounded-2xl gradient-primary animate-pulse shadow-glow" />
+          </div>
+          <Loader2 className="h-5 w-5 animate-spin text-primary" />
+        </div>
       </div>
     );
   }
@@ -29,29 +34,32 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     return <Navigate to="/auth" replace />;
   }
 
-  const sidebarWidth = preferences.sidebar_collapsed ? 'lg:left-[68px]' : 'lg:left-72';
-  const mainPadding = preferences.sidebar_collapsed ? 'lg:pl-[68px]' : 'lg:pl-72';
+  const sidebarWidth = preferences.sidebar_collapsed ? 'lg:left-[72px]' : 'lg:left-[280px]';
+  const mainPadding = preferences.sidebar_collapsed ? 'lg:pl-[72px]' : 'lg:pl-[280px]';
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background gradient-mesh">
       <Sidebar />
       
+      {/* Top bar — glass floating navbar */}
       <header className={cn(
-        'fixed top-0 right-0 left-0 h-16 bg-background/95 backdrop-blur-sm border-b z-40 transition-all duration-300',
+        'fixed top-0 right-0 left-0 z-40 transition-all duration-500',
         sidebarWidth
       )}>
-        <div className="flex items-center justify-between h-full px-4 sm:px-6 lg:px-8">
-          <div className="flex-1" />
-          <div className="flex items-center gap-2">
-            <ThemeToggle />
-            <NotificationsDropdown />
-            <ProfileDropdown />
+        <div className="m-3 mb-0 rounded-2xl glass shadow-md">
+          <div className="flex items-center justify-between h-14 px-5">
+            <div className="flex-1" />
+            <div className="flex items-center gap-1.5">
+              <ThemeToggle />
+              <NotificationsDropdown />
+              <ProfileDropdown />
+            </div>
           </div>
         </div>
       </header>
 
-      <main className={cn('transition-all duration-300', mainPadding)}>
-        <div className="px-4 py-6 sm:px-6 lg:px-8 pt-20 lg:pt-20">
+      <main className={cn('transition-all duration-500', mainPadding)}>
+        <div className="px-4 py-6 sm:px-6 lg:px-8 pt-24 lg:pt-24 page-transition">
           {children}
         </div>
       </main>
