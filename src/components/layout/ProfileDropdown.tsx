@@ -13,16 +13,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import {
-  User,
-  LogOut,
-  Settings,
-  ChevronDown,
-  Shield,
-  GraduationCap,
-  BookOpen,
-} from 'lucide-react';
+import { User, LogOut, Settings, ChevronDown, Shield, GraduationCap, BookOpen } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
@@ -42,30 +33,20 @@ export function ProfileDropdown() {
 
   useEffect(() => {
     const fetchProfile = async () => {
-      if (!user) {
-        setIsLoading(false);
-        return;
-      }
-
+      if (!user) { setIsLoading(false); return; }
       try {
         const { data, error } = await supabase
           .from('profiles')
           .select('*')
           .eq('user_id', user.id)
           .maybeSingle();
-
-        if (error) {
-          console.error('Error fetching profile:', error);
-        } else {
-          setProfile(data);
-        }
+        if (!error) setProfile(data);
       } catch (error) {
         console.error('Error fetching profile:', error);
       } finally {
         setIsLoading(false);
       }
     };
-
     fetchProfile();
   }, [user]);
 
@@ -82,33 +63,14 @@ export function ProfileDropdown() {
 
   const getInitials = () => {
     if (profile?.full_name) {
-      return profile.full_name
-        .split(' ')
-        .map((n) => n[0])
-        .join('')
-        .toUpperCase()
-        .slice(0, 2);
+      return profile.full_name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2);
     }
     return user?.email?.charAt(0).toUpperCase() || 'U';
   };
 
-  const getRoleIcon = () => {
-    if (isAdmin) return <Shield className="h-3 w-3" />;
-    if (isTeacher) return <BookOpen className="h-3 w-3" />;
-    if (isStudent) return <GraduationCap className="h-3 w-3" />;
-    return <User className="h-3 w-3" />;
-  };
-
-  const getRoleBadgeVariant = () => {
-    if (isAdmin) return 'default';
-    if (isTeacher) return 'secondary';
-    if (isStudent) return 'outline';
-    return 'outline';
-  };
-
   if (!user) {
     return (
-      <Button variant="default" onClick={() => navigate('/auth')}>
+      <Button variant="default" onClick={() => navigate('/auth')} className="rounded-xl">
         Sign In
       </Button>
     );
@@ -119,65 +81,46 @@ export function ProfileDropdown() {
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
-          className="flex items-center gap-2 px-2 py-1.5 h-auto hover:bg-muted/50"
+          className="flex items-center gap-2.5 px-2 py-1.5 h-auto hover:bg-primary/5 rounded-xl"
         >
-          <Avatar className="h-8 w-8 border-2 border-primary/20">
-            <AvatarImage
-              src={profile?.avatar_url || undefined}
-              alt={profile?.full_name || 'User'}
-            />
-            <AvatarFallback className="bg-primary/10 text-primary font-medium text-sm">
+          <Avatar className="h-8 w-8 ring-2 ring-primary/20 ring-offset-1 ring-offset-background">
+            <AvatarImage src={profile?.avatar_url || undefined} alt={profile?.full_name || 'User'} />
+            <AvatarFallback className="gradient-primary text-white font-bold text-xs">
               {getInitials()}
             </AvatarFallback>
           </Avatar>
           <div className="hidden md:flex flex-col items-start">
-            <span className="text-sm font-medium leading-tight">
+            <span className="text-sm font-semibold leading-tight">
               {profile?.full_name || user.email?.split('@')[0]}
             </span>
-            <Badge
-              variant={getRoleBadgeVariant()}
-              className="h-4 text-[10px] px-1.5 capitalize"
-            >
-              {getRoleIcon()}
-              <span className="ml-1">{role}</span>
-            </Badge>
+            <span className="text-[11px] text-muted-foreground capitalize">{role}</span>
           </div>
-          <ChevronDown className="h-4 w-4 text-muted-foreground hidden md:block" />
+          <ChevronDown className="h-3.5 w-3.5 text-muted-foreground hidden md:block" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuLabel className="font-normal">
+      <DropdownMenuContent align="end" className="w-56 rounded-2xl p-1">
+        <DropdownMenuLabel className="font-normal px-3 py-2.5">
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">
-              {profile?.full_name || 'User'}
-            </p>
-            <p className="text-xs leading-none text-muted-foreground">
-              {user.email}
-            </p>
+            <p className="text-sm font-semibold">{profile?.full_name || 'User'}</p>
+            <p className="text-xs text-muted-foreground">{user.email}</p>
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem
-          onClick={() => navigate('/dashboard')}
-          className="cursor-pointer"
-        >
+        <DropdownMenuItem onClick={() => navigate('/dashboard')} className="cursor-pointer rounded-xl mx-1 px-3">
           <User className="mr-2 h-4 w-4" />
-          <span>Dashboard</span>
+          Dashboard
         </DropdownMenuItem>
-        <DropdownMenuItem
-          onClick={() => toast.info('Profile settings coming soon')}
-          className="cursor-pointer"
-        >
+        <DropdownMenuItem onClick={() => toast.info('Profile settings coming soon')} className="cursor-pointer rounded-xl mx-1 px-3">
           <Settings className="mr-2 h-4 w-4" />
-          <span>Settings</span>
+          Settings
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem
           onClick={handleSignOut}
-          className="cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10"
+          className="cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10 rounded-xl mx-1 px-3"
         >
           <LogOut className="mr-2 h-4 w-4" />
-          <span>Sign out</span>
+          Sign out
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
