@@ -4,9 +4,10 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, Mail, Lock, ArrowRight, GraduationCap } from 'lucide-react';
+import { Loader2, Mail, Lock, ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { z } from 'zod';
+import './Auth.css';
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -21,7 +22,7 @@ export default function Auth() {
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-background">
+      <div className="flex h-screen items-center justify-center bg-[#0a0a1a]">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
@@ -72,26 +73,53 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background gradient-mesh px-4">
-      <div className="w-full max-w-md space-y-8 animate-fade-in">
-        {/* Logo */}
-        <div className="text-center space-y-2">
-          <div className="inline-flex items-center justify-center h-14 w-14 rounded-2xl gradient-primary shadow-glow mb-2">
-            <GraduationCap className="h-7 w-7 text-primary-foreground" />
-          </div>
-          <h1 className="text-2xl font-bold font-display text-foreground">
-            Campus <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">Companion</span>
-          </h1>
-          <p className="text-muted-foreground text-sm">Sign in to your account</p>
-        </div>
+    <div className="auth-scene">
+      {/* Ambient light effects */}
+      <div className="auth-ambient auth-ambient--1" />
+      <div className="auth-ambient auth-ambient--2" />
+      <div className="auth-ambient auth-ambient--3" />
 
-        {/* Card */}
-        <div className="glass rounded-2xl p-8 shadow-xl border border-border/50">
-          <form onSubmit={handleSubmit} className="space-y-5">
+      {/* Ground line */}
+      <div className="auth-ground" />
+
+      {/* Walking character */}
+      <div className="auth-character">
+        <svg viewBox="0 0 120 200" className="auth-character__svg">
+          <circle cx="60" cy="28" r="16" fill="hsl(var(--primary))" opacity="0.9" />
+          <rect x="48" y="44" width="24" height="50" rx="8" fill="hsl(var(--primary))" opacity="0.8" />
+          <rect x="30" y="50" width="18" height="8" rx="4" fill="hsl(var(--primary))" opacity="0.7" className="auth-arm-left" />
+          <rect x="72" y="50" width="18" height="8" rx="4" fill="hsl(var(--primary))" opacity="0.7" className="auth-arm-right" />
+          <rect x="48" y="94" width="10" height="40" rx="5" fill="hsl(var(--primary))" opacity="0.75" className="auth-leg-left" />
+          <rect x="62" y="94" width="10" height="40" rx="5" fill="hsl(var(--primary))" opacity="0.75" className="auth-leg-right" />
+          <ellipse cx="53" cy="136" rx="8" ry="4" fill="hsl(var(--primary))" opacity="0.6" className="auth-leg-left" />
+          <ellipse cx="67" cy="136" rx="8" ry="4" fill="hsl(var(--primary))" opacity="0.6" className="auth-leg-right" />
+        </svg>
+      </div>
+
+      {/* Bag */}
+      <div className="auth-bag">
+        <svg viewBox="0 0 100 80" className="auth-bag__svg">
+          <rect x="10" y="20" width="80" height="55" rx="6" fill="hsl(var(--accent))" opacity="0.85" />
+          <rect x="10" y="15" width="80" height="12" rx="4" fill="hsl(var(--accent))" opacity="0.95" className="auth-bag__flap" />
+          <path d="M35 20 Q35 5, 50 5 Q65 5, 65 20" stroke="hsl(var(--accent))" strokeWidth="4" fill="none" opacity="0.7" />
+          <rect x="42" y="22" width="16" height="10" rx="3" fill="hsl(var(--primary))" opacity="0.5" />
+          <rect x="18" y="30" width="20" height="3" rx="1.5" fill="white" opacity="0.15" />
+        </svg>
+      </div>
+
+      {/* Login form emerging from bag */}
+      <div className="auth-form-container">
+        <div className="auth-form-card">
+          <div className="text-center mb-6">
+            <h1 className="text-2xl font-bold font-display text-foreground">
+              Campus <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">Companion</span>
+            </h1>
+            <p className="text-muted-foreground text-sm mt-1">Sign in to continue</p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1.5">
-              <Label htmlFor="email" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Email
-              </Label>
+              <Label htmlFor="email" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Email</Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -100,16 +128,14 @@ export default function Auth() {
                   placeholder="you@college.edu"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="pl-10 h-11 rounded-xl"
+                  className="pl-10 h-11 rounded-xl border-white/10 bg-white/5 text-foreground placeholder:text-muted-foreground/50 focus:bg-white/10 focus:border-primary/50 transition-all"
                 />
               </div>
               {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="password" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Password
-              </Label>
+              <Label htmlFor="password" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Password</Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -118,7 +144,7 @@ export default function Auth() {
                   placeholder="••••••••"
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  className="pl-10 h-11 rounded-xl"
+                  className="pl-10 h-11 rounded-xl border-white/10 bg-white/5 text-foreground placeholder:text-muted-foreground/50 focus:bg-white/10 focus:border-primary/50 transition-all"
                 />
               </div>
               {errors.password && <p className="text-xs text-destructive">{errors.password}</p>}
@@ -126,7 +152,7 @@ export default function Auth() {
 
             <Button
               type="submit"
-              className="w-full h-11 text-sm font-semibold rounded-xl gradient-primary border-0 hover:opacity-90 transition-all shadow-glow group"
+              className="w-full h-11 text-sm font-semibold rounded-xl gradient-primary border-0 hover:opacity-90 transition-all shadow-glow group mt-2"
               disabled={isSubmitting}
             >
               {isSubmitting ? (
@@ -140,10 +166,17 @@ export default function Auth() {
             </Button>
           </form>
 
-          <p className="text-center text-xs text-muted-foreground mt-6">
+          <p className="text-center text-[11px] text-muted-foreground/60 mt-5">
             Contact your administrator for access
           </p>
         </div>
+      </div>
+
+      {/* Floating particles */}
+      <div className="auth-particles">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div key={i} className="auth-particle" style={{ '--i': i } as React.CSSProperties} />
+        ))}
       </div>
     </div>
   );
