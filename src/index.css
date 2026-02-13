@@ -200,7 +200,7 @@
   }
 
   .stat-card {
-    @apply relative overflow-hidden rounded-2xl border bg-card p-6 shadow-md transition-all duration-500;
+    @apply relative overflow-hidden rounded-xl sm:rounded-2xl border bg-card p-4 sm:p-6 shadow-md transition-all duration-500;
   }
 
   .stat-card:hover {
@@ -313,21 +313,40 @@
   @apply bg-muted-foreground/35;
 }
 
+/* Touch-friendly tap targets */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Safe area for mobile notch */
+.safe-area-inset {
+  padding-left: env(safe-area-inset-left, 0);
+  padding-right: env(safe-area-inset-right, 0);
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
 /* ═══ Table styling ═══ */
 .data-table {
   @apply w-full border-separate border-spacing-0;
 }
 
 .data-table th {
-  @apply bg-muted/50 text-left text-sm font-semibold text-muted-foreground px-4 py-3 first:rounded-tl-xl last:rounded-tr-xl;
+  @apply bg-muted/50 text-left text-xs sm:text-sm font-semibold text-muted-foreground px-2 sm:px-4 py-2 sm:py-3 first:rounded-tl-xl last:rounded-tr-xl;
 }
 
 .data-table td {
-  @apply px-4 py-3 text-sm border-b border-border/50;
+  @apply px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm border-b border-border/50;
 }
 
 .data-table tbody tr {
   @apply transition-colors hover:bg-muted/20;
+}
+
+/* ═══ Responsive table wrapper ═══ */
+.table-responsive {
+  @apply w-full overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* ═══ LiveKit Video Conference Styles ═══ */

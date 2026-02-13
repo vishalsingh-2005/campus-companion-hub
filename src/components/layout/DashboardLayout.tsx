@@ -43,13 +43,13 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       
       {/* Top bar — glass floating navbar */}
       <header className={cn(
-        'fixed top-0 right-0 left-0 z-40 transition-all duration-500',
+        'fixed top-0 right-0 left-0 z-30 transition-all duration-500',
         sidebarWidth
       )}>
-        <div className="m-3 mb-0 rounded-2xl glass shadow-md">
-          <div className="flex items-center justify-between h-14 px-5">
+        <div className="m-2 sm:m-3 mb-0 rounded-2xl glass shadow-md">
+          <div className="flex items-center justify-between h-12 sm:h-14 px-3 sm:px-5">
             <div className="flex-1" />
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1 sm:gap-1.5">
               <ThemeToggle />
               <NotificationsDropdown />
               <ProfileDropdown />
@@ -59,7 +59,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       </header>
 
       <main className={cn('transition-all duration-500', mainPadding)}>
-        <div className="px-4 py-6 sm:px-6 lg:px-8 pt-24 lg:pt-24 page-transition">
+        <div className="px-3 py-4 sm:px-4 sm:py-6 md:px-6 lg:px-8 pt-18 sm:pt-20 lg:pt-24 page-transition">
           {children}
         </div>
       </main>

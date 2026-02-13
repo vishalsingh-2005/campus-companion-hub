@@ -8,12 +8,13 @@ import {
   CalendarCheck, Bell, ChevronsLeft, ChevronsRight, User as UserIcon,
   MessageSquare, Sparkles,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserRole } from '@/hooks/useUserRole';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { usePreferences } from '@/contexts/PreferencesContext';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface NavItem {
   name: string;
@@ -97,6 +98,22 @@ export function Sidebar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { preferences, updatePreference } = usePreferences();
   const collapsed = preferences.sidebar_collapsed;
+  const isMobile = useIsMobile();
+
+  // Close mobile menu on route change
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [location.pathname]);
+
+  // Prevent body scroll when mobile menu is open
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [mobileMenuOpen]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -132,7 +149,7 @@ export function Sidebar() {
   const NavLink = ({ item }: { item: NavItem }) => {
     const isActive = location.pathname === item.href;
 
-    if (collapsed) {
+    if (collapsed && !isMobile) {
       return (
         <Tooltip delayDuration={0}>
           <TooltipTrigger asChild>
@@ -164,7 +181,7 @@ export function Sidebar() {
         to={item.href}
         onClick={() => setMobileMenuOpen(false)}
         className={cn(
-          'flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-300 relative group/link',
+          'flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-300 relative group/link active:scale-[0.98]',
           isActive
             ? 'bg-sidebar-primary text-sidebar-primary-foreground shadow-glow'
             : 'text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/50'
@@ -179,14 +196,14 @@ export function Sidebar() {
     );
   };
 
-  const NavContent = ({ isMobile = false }: { isMobile?: boolean }) => {
-    const showExpanded = isMobile || !collapsed;
+  const NavContent = ({ isMobileView = false }: { isMobileView?: boolean }) => {
+    const showExpanded = isMobileView || !collapsed;
 
     return (
       <>
         {/* Logo */}
         <div className={cn(
-          'flex h-[72px] items-center border-b border-sidebar-border/50',
+          'flex h-[72px] items-center border-b border-sidebar-border/50 flex-shrink-0',
           showExpanded ? 'gap-3 px-6' : 'justify-center px-2'
         )}>
           <div className={cn(
@@ -201,7 +218,17 @@ export function Sidebar() {
               <span className="text-xs text-sidebar-foreground/50 font-medium">Companion</span>
             </div>
           )}
-          {!isMobile && (
+          {isMobileView && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-sidebar-foreground/40 hover:text-sidebar-foreground hover:bg-sidebar-accent/50 rounded-xl ml-auto"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          )}
+          {!isMobileView && (
             <Button
               variant="ghost"
               size="icon"
@@ -215,7 +242,7 @@ export function Sidebar() {
 
         {/* Role badge */}
         {showExpanded && (
-          <div className="px-5 pt-5 pb-2">
+          <div className="px-5 pt-5 pb-2 flex-shrink-0">
             <div className={cn('inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold bg-gradient-to-r text-white', getRoleColor())}>
               {isAdmin && <Shield className="h-3 w-3" />}
               {isTeacher && <BookOpen className="h-3 w-3" />}
@@ -228,7 +255,7 @@ export function Sidebar() {
 
         {/* Navigation */}
         <nav className={cn(
-          'flex-1 py-3 space-y-0.5 overflow-y-auto',
+          'flex-1 py-3 space-y-0.5 overflow-y-auto overscroll-contain',
           showExpanded ? 'px-3' : 'px-2'
         )}>
           {navigation.map((item) => (
@@ -237,7 +264,7 @@ export function Sidebar() {
         </nav>
 
         {/* Footer */}
-        <div className="p-4 border-t border-sidebar-border/50">
+        <div className="p-4 border-t border-sidebar-border/50 flex-shrink-0">
           {showExpanded ? (
             <div className="space-y-3">
               <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-sidebar-accent/30">
@@ -296,31 +323,38 @@ export function Sidebar() {
 
   return (
     <>
-      {/* Mobile menu button */}
+      {/* Mobile hamburger button — fixed bottom-right for thumb reach on phones */}
       <button
         type="button"
-        className="lg:hidden fixed top-4 left-4 z-50 p-2.5 rounded-2xl glass shadow-lg text-foreground"
+        className={cn(
+          'lg:hidden fixed z-50 p-3 rounded-2xl shadow-lg transition-all duration-300 active:scale-95',
+          mobileMenuOpen
+            ? 'top-4 right-4 glass text-foreground'
+            : 'bottom-6 right-6 gradient-primary text-white shadow-glow'
+        )}
         onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+        aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
       >
         {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
       </button>
 
       {/* Mobile sidebar overlay */}
-      {mobileMenuOpen && (
-        <div
-          className="lg:hidden fixed inset-0 z-40 bg-foreground/30 backdrop-blur-sm"
-          onClick={() => setMobileMenuOpen(false)}
-        />
-      )}
+      <div
+        className={cn(
+          'lg:hidden fixed inset-0 z-40 bg-foreground/40 backdrop-blur-sm transition-opacity duration-300',
+          mobileMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+        )}
+        onClick={() => setMobileMenuOpen(false)}
+      />
 
-      {/* Mobile sidebar */}
+      {/* Mobile sidebar — slides from left with smooth transition */}
       <aside
         className={cn(
-          'lg:hidden fixed inset-y-0 left-0 z-40 w-[280px] glass-sidebar flex flex-col transition-transform duration-500 ease-out',
+          'lg:hidden fixed inset-y-0 left-0 z-40 w-[min(300px,85vw)] glass-sidebar flex flex-col transition-transform duration-400 ease-out will-change-transform',
           mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >
-        <NavContent isMobile />
+        <NavContent isMobileView />
       </aside>
 
       {/* Desktop sidebar */}
