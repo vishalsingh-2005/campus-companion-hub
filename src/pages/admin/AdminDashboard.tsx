@@ -41,10 +41,10 @@ export default function AdminDashboard() {
 
   if (loading) {
     return (
-      <div className="space-y-6">
-        <Skeleton className="h-12 w-64" />
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-32" />)}
+      <div className="space-y-4 sm:space-y-6">
+        <Skeleton className="h-10 sm:h-12 w-48 sm:w-64" />
+        <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
+          {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-28 sm:h-32" />)}
         </div>
       </div>
     );
@@ -58,15 +58,15 @@ export default function AdminDashboard() {
   ];
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-4 sm:space-y-6 animate-fade-in">
       <PageHeader title="Admin Dashboard" description="System overview and management">
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium">
-          <Shield className="h-4 w-4" />
+        <div className="flex items-center gap-2 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full bg-primary/10 text-primary text-xs sm:text-sm font-medium">
+          <Shield className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
           Full Access
         </div>
       </PageHeader>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
         <StatCard title="Students" value={stats.students} icon={GraduationCap} />
         <StatCard title="Teachers" value={stats.teachers} icon={Users} variant="info" />
         <StatCard title="Courses" value={stats.courses} icon={BookOpen} variant="warning" />
@@ -74,19 +74,19 @@ export default function AdminDashboard() {
       </div>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Quick Actions</CardTitle>
+        <CardHeader className="p-4 sm:p-6">
+          <CardTitle className="text-lg sm:text-2xl">Quick Actions</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">
+          <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
             {quickActions.map((a) => (
               <Link key={a.label} to={a.href}>
-                <Button variant="outline" className="w-full h-auto py-4 flex flex-col items-center gap-2 hover:bg-muted/50 transition-all group">
-                  <div className={`p-3 rounded-lg ${a.color} text-white`}>
-                    <a.icon className="h-5 w-5" />
+                <Button variant="outline" className="w-full h-auto py-3 sm:py-4 flex flex-col items-center gap-1.5 sm:gap-2 hover:bg-muted/50 transition-all group active:scale-[0.97]">
+                  <div className={`p-2 sm:p-3 rounded-lg ${a.color} text-white`}>
+                    <a.icon className="h-4 w-4 sm:h-5 sm:w-5" />
                   </div>
-                  <span className="font-medium">{a.label}</span>
-                  <ArrowRight className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <span className="font-medium text-xs sm:text-sm">{a.label}</span>
+                  <ArrowRight className="h-3.5 w-3.5 sm:h-4 sm:w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
                 </Button>
               </Link>
             ))}

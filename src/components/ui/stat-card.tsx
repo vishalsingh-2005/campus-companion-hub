@@ -1,4 +1,3 @@
-import { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import { LucideIcon } from 'lucide-react';
 
@@ -46,29 +45,29 @@ export function StatCard({
       styles.glow,
       className
     )}>
-      <div className="flex items-start justify-between">
-        <div className="space-y-2">
-          <p className="text-sm font-medium text-muted-foreground">{title}</p>
-          <p className="text-3xl font-bold text-foreground font-display">{value}</p>
-          {subtitle && <p className="text-sm text-muted-foreground">{subtitle}</p>}
-          {description && <p className="text-sm text-muted-foreground">{description}</p>}
+      <div className="flex items-start justify-between gap-3">
+        <div className="space-y-1.5 sm:space-y-2 min-w-0 flex-1">
+          <p className="text-xs sm:text-sm font-medium text-muted-foreground truncate">{title}</p>
+          <p className="text-2xl sm:text-3xl font-bold text-foreground font-display">{value}</p>
+          {subtitle && <p className="text-xs sm:text-sm text-muted-foreground truncate">{subtitle}</p>}
+          {description && <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2">{description}</p>}
           {trend && (
             <div className="flex items-center gap-1.5">
               <span className={cn(
-                'text-sm font-semibold',
+                'text-xs sm:text-sm font-semibold',
                 trend.isPositive ? 'text-success' : 'text-destructive'
               )}>
                 {trend.isPositive ? '+' : ''}{trend.value}%
               </span>
-              <span className="text-xs text-muted-foreground">vs last month</span>
+              <span className="text-[10px] sm:text-xs text-muted-foreground">vs last month</span>
             </div>
           )}
         </div>
         <div className={cn(
-          'flex h-12 w-12 items-center justify-center rounded-2xl transition-all duration-500 group-hover:scale-110 group-hover:rotate-3',
+          'flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-xl sm:rounded-2xl transition-all duration-500 group-hover:scale-110 group-hover:rotate-3 flex-shrink-0',
           iconClassName || styles.icon
         )}>
-          <Icon className="h-6 w-6" />
+          <Icon className="h-5 w-5 sm:h-6 sm:w-6" />
         </div>
       </div>
     </div>

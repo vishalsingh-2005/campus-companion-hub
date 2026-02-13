@@ -34,28 +34,28 @@ export function PageHeader({ title, description, actions, children, showBackButt
   };
 
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
-      <div className="animate-slide-in-left flex items-center gap-4">
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4 mb-6 sm:mb-8">
+      <div className="animate-slide-in-left flex items-center gap-3 sm:gap-4 min-w-0">
         {showBackButton && (
           <Button
             variant="outline"
             size="icon"
             onClick={handleBack}
-            className="flex-shrink-0 rounded-xl h-10 w-10 hover:bg-primary/5 hover:text-primary hover:border-primary/30 transition-all"
+            className="flex-shrink-0 rounded-xl h-9 w-9 sm:h-10 sm:w-10 hover:bg-primary/5 hover:text-primary hover:border-primary/30 transition-all active:scale-95"
             title="Go back"
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
         )}
-        <div>
-          <h1 className="text-3xl font-bold text-foreground font-display">{title}</h1>
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground font-display truncate">{title}</h1>
           {description && (
-            <p className="mt-1.5 text-muted-foreground text-sm">{description}</p>
+            <p className="mt-1 sm:mt-1.5 text-muted-foreground text-xs sm:text-sm line-clamp-2">{description}</p>
           )}
         </div>
       </div>
       {(actions || children) && (
-        <div className="animate-fade-in flex items-center gap-3">
+        <div className="animate-fade-in flex items-center gap-2 sm:gap-3 flex-shrink-0">
           {children}
           {actions}
         </div>
