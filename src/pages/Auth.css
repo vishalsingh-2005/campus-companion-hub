@@ -1,365 +1,113 @@
 /* ═══════════════════════════════════════════
-   ANIMATED LOGIN – Walking Character Scene
+   LOGIN – Mosaic Background + Centered Card
    ═══════════════════════════════════════════ */
 
 .auth-scene {
   position: relative;
   min-height: 100vh;
   overflow: hidden;
-  background: linear-gradient(170deg, #0a0a1a 0%, #0d1117 40%, #111827 100%);
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: center;
+  background: hsl(var(--background));
 }
 
-/* ── Ambient lights ── */
-.auth-ambient {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(100px);
-  pointer-events: none;
-}
-.auth-ambient--1 {
-  width: 500px; height: 500px;
-  top: -150px; left: -100px;
-  background: hsl(var(--primary) / 0.08);
-}
-.auth-ambient--2 {
-  width: 400px; height: 400px;
-  bottom: -100px; right: -80px;
-  background: hsl(var(--accent) / 0.06);
-}
-.auth-ambient--3 {
-  width: 300px; height: 300px;
-  top: 30%; left: 50%;
-  transform: translateX(-50%);
-  background: hsl(var(--primary) / 0.04);
-}
-
-/* ── Ground ── */
-.auth-ground {
-  position: absolute;
-  bottom: 60px;
-  left: 0; right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent 5%, hsl(var(--primary) / 0.15) 30%, hsl(var(--primary) / 0.25) 50%, hsl(var(--primary) / 0.15) 70%, transparent 95%);
-}
-
-/* ══════════════════════════
-   CHARACTER ANIMATION
-   ══════════════════════════ */
-
-.auth-character {
-  position: absolute;
-  bottom: 62px;
-  width: 80px;
-  height: 140px;
-  animation: walkIn 2.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards,
-             characterFade 0.8s ease-out 4.5s forwards;
-  z-index: 10;
-}
-
-.auth-character__svg {
-  width: 100%;
-  height: 100%;
-  filter: drop-shadow(0 4px 20px hsl(var(--primary) / 0.3));
-}
-
-/* Walk legs */
-.auth-leg-left {
-  transform-origin: 53px 94px;
-  animation: legSwingL 0.5s ease-in-out alternate infinite;
-  animation-delay: 0s;
-}
-.auth-leg-right {
-  transform-origin: 67px 94px;
-  animation: legSwingR 0.5s ease-in-out alternate infinite;
-  animation-delay: 0.25s;
-}
-/* Stop legs when character stops */
-.auth-character {
-  animation: walkIn 2.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards,
-             characterFade 0.8s ease-out 4.5s forwards;
-}
-
-/* Arms swing */
-.auth-arm-left {
-  transform-origin: 48px 54px;
-  animation: armSwingL 0.5s ease-in-out alternate infinite;
-}
-.auth-arm-right {
-  transform-origin: 72px 54px;
-  animation: armSwingR 0.5s ease-in-out alternate infinite;
-}
-
-@keyframes walkIn {
-  0% {
-    left: -120px;
-    transform: translateY(0);
-  }
-  70% {
-    left: calc(50% - 40px);
-    transform: translateY(0);
-  }
-  80% {
-    left: calc(50% - 40px);
-    transform: translateY(-8px);
-  }
-  100% {
-    left: calc(50% - 40px);
-    transform: translateY(0);
-  }
-}
-
-@keyframes characterFade {
-  0% { opacity: 1; transform: translateY(0); }
-  100% { opacity: 0.15; transform: translateY(0) scale(0.95); }
-}
-
-@keyframes legSwingL {
-  0% { transform: rotate(-12deg); }
-  100% { transform: rotate(12deg); }
-}
-@keyframes legSwingR {
-  0% { transform: rotate(12deg); }
-  100% { transform: rotate(-12deg); }
-}
-@keyframes armSwingL {
-  0% { transform: rotate(8deg); }
-  100% { transform: rotate(-8deg); }
-}
-@keyframes armSwingR {
-  0% { transform: rotate(-8deg); }
-  100% { transform: rotate(8deg); }
-}
-
-/* ══════════════════════════
-   BAG ANIMATION
-   ══════════════════════════ */
-
-.auth-bag {
-  position: absolute;
-  bottom: 30px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 70px;
-  height: 56px;
-  opacity: 0;
-  animation: bagDrop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 2.4s forwards,
-             bagOpen 0.5s ease-out 3.2s forwards;
-  z-index: 5;
-}
-
-.auth-bag__svg {
-  width: 100%;
-  height: 100%;
-  filter: drop-shadow(0 8px 24px hsl(var(--accent) / 0.3));
-}
-
-.auth-bag__flap {
-  transform-origin: 10px 21px;
-  animation: flapOpen 0.6s cubic-bezier(0.22, 1, 0.36, 1) 3.2s forwards;
-}
-
-@keyframes bagDrop {
-  0% {
-    opacity: 0;
-    transform: translateX(-50%) translateY(-40px) scale(0.7);
-  }
-  60% {
-    opacity: 1;
-    transform: translateX(-50%) translateY(4px) scale(1.05);
-  }
-  100% {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0) scale(1);
-  }
-}
-
-@keyframes bagOpen {
-  0% { transform: translateX(-50%) scale(1); }
-  50% { transform: translateX(-50%) scale(1.08); }
-  100% { transform: translateX(-50%) scale(1); }
-}
-
-@keyframes flapOpen {
-  0% { transform: rotateX(0deg); }
-  100% { transform: rotateX(-70deg); }
-}
-
-/* ══════════════════════════
-   FORM REVEAL
-   ══════════════════════════ */
-
-.auth-form-container {
-  position: absolute;
-  bottom: 80px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 20;
-  opacity: 0;
-  animation: formReveal 0.9s cubic-bezier(0.22, 1, 0.36, 1) 3.6s forwards;
-}
-
-@keyframes formReveal {
-  0% {
-    opacity: 0;
-    transform: translateX(-50%) translateY(60px) scale(0.9);
-  }
-  100% {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0) scale(1);
-  }
-}
-
-.auth-form-card {
-  width: 340px;
-  max-width: 90vw;
-  padding: 2rem;
-  border-radius: 1.25rem;
-  background: linear-gradient(145deg, hsl(var(--card) / 0.85), hsl(var(--card) / 0.6));
-  backdrop-filter: blur(40px) saturate(180%);
-  border: 1px solid hsl(var(--primary) / 0.12);
-  box-shadow:
-    0 0 0 1px hsl(var(--primary) / 0.05),
-    0 20px 60px -10px hsl(var(--primary) / 0.2),
-    0 0 80px -20px hsl(var(--accent) / 0.1),
-    inset 0 1px 0 hsl(0 0% 100% / 0.05);
-}
-
-/* ── Floating particles ── */
-.auth-particles {
+/* ── Mosaic tile background ── */
+.auth-mosaic {
   position: absolute;
   inset: 0;
-  pointer-events: none;
-  overflow: hidden;
-}
-
-.auth-particle {
-  position: absolute;
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background: hsl(var(--primary) / 0.3);
-  bottom: 80px;
-  left: 50%;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  grid-auto-rows: 120px;
+  gap: 8px;
+  padding: 8px;
   opacity: 0;
-  animation: particleFloat 2s ease-out calc(3.8s + var(--i) * 0.15s) forwards;
+  animation: mosaicFadeIn 1.2s ease-out 0.2s forwards;
 }
 
-@keyframes particleFloat {
-  0% {
-    opacity: 0;
-    transform: translateX(calc((var(--i) - 3) * 20px)) translateY(0) scale(0);
-  }
-  30% {
-    opacity: 0.8;
-    transform: translateX(calc((var(--i) - 3) * 40px)) translateY(-40px) scale(1);
-  }
-  100% {
-    opacity: 0;
-    transform: translateX(calc((var(--i) - 3) * 60px)) translateY(-120px) scale(0.5);
-  }
+.auth-mosaic-tile {
+  border-radius: 12px;
+  background-size: cover;
+  background-position: center;
+  transition: transform 0.4s ease;
 }
 
-/* ── Responsive — Tablets ── */
-@media (max-width: 1024px) and (min-width: 641px) {
-  .auth-character {
-    width: 70px;
-    height: 120px;
-  }
-  .auth-bag {
-    width: 60px;
-    height: 48px;
-    bottom: 32px;
-  }
-  .auth-form-card {
-    width: 360px;
-  }
+.auth-mosaic-tile:hover {
+  transform: scale(1.04);
 }
 
-/* ── Responsive — Mobile ── */
+/* ── Overlay to dim the mosaic ── */
+.auth-mosaic-overlay {
+  position: absolute;
+  inset: 0;
+  background: hsl(var(--background) / 0.55);
+  backdrop-filter: blur(6px);
+  z-index: 1;
+}
+
+/* ── Centered card ── */
+.auth-card-wrapper {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  max-width: 440px;
+  padding: 0 1rem;
+  opacity: 0;
+  animation: cardSlideUp 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.6s forwards;
+}
+
+.auth-card {
+  background: hsl(var(--card));
+  border-radius: 1.5rem;
+  padding: 2.5rem 2rem;
+  box-shadow:
+    0 25px 80px -12px hsl(var(--primary) / 0.12),
+    0 8px 24px -4px hsl(0 0% 0% / 0.08),
+    0 0 0 1px hsl(var(--border));
+}
+
+/* ── Divider line with text ── */
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin: 1.25rem 0;
+  color: hsl(var(--muted-foreground));
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: hsl(var(--border));
+}
+
+/* ── Animations ── */
+@keyframes mosaicFadeIn {
+  0% { opacity: 0; transform: scale(1.05); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes cardSlideUp {
+  0% { opacity: 0; transform: translateY(32px) scale(0.97); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ── Responsive ── */
 @media (max-width: 640px) {
-  .auth-scene {
-    align-items: center;
-    justify-content: center;
+  .auth-mosaic {
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    grid-auto-rows: 80px;
+    gap: 4px;
+    padding: 4px;
   }
-  .auth-character {
-    width: 50px;
-    height: 88px;
-    bottom: auto;
-    top: 6vh;
-  }
-  .auth-bag {
-    width: 40px;
-    height: 32px;
-    bottom: auto;
-    top: calc(6vh + 90px);
-  }
-  .auth-ground {
-    bottom: auto;
-    top: calc(6vh + 85px);
-  }
-  .auth-form-container {
-    position: relative;
-    bottom: auto;
-    left: auto;
-    transform: none !important;
-    margin-top: 1rem;
-    padding: 0 1rem;
-    width: 100%;
-    display: flex;
-    justify-content: center;
-    animation: formRevealMobile 0.9s cubic-bezier(0.22, 1, 0.36, 1) 3.6s forwards;
-  }
-  .auth-form-card {
-    width: 100%;
-    max-width: 340px;
-    padding: 1.25rem;
-  }
-  .auth-ambient--1 {
-    width: 300px;
-    height: 300px;
-  }
-  .auth-ambient--2 {
-    width: 250px;
-    height: 250px;
-  }
-  .auth-ambient--3 {
-    width: 180px;
-    height: 180px;
-  }
-  .auth-scene {
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-start;
-    padding-top: 2vh;
-  }
-}
 
-/* ── Responsive — Very small phones ── */
-@media (max-width: 380px) {
-  .auth-character {
-    display: none;
-  }
-  .auth-bag {
-    display: none;
-  }
-  .auth-ground {
-    display: none;
-  }
-  .auth-form-card {
-    padding: 1rem;
-  }
-}
-
-@keyframes formRevealMobile {
-  0% {
-    opacity: 0;
-    transform: translateY(40px) scale(0.95);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0) scale(1);
+  .auth-card {
+    padding: 1.75rem 1.25rem;
+    border-radius: 1.25rem;
   }
 }
