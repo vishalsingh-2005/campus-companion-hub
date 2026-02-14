@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -14,15 +14,53 @@ const loginSchema = z.object({
   password: z.string().min(6, 'Password must be at least 6 characters'),
 });
 
+// Vibrant tile colors for the mosaic background
+const TILE_COLORS = [
+  'linear-gradient(135deg, #667eea, #764ba2)',
+  'linear-gradient(135deg, #f093fb, #f5576c)',
+  'linear-gradient(135deg, #4facfe, #00f2fe)',
+  'linear-gradient(135deg, #43e97b, #38f9d7)',
+  'linear-gradient(135deg, #fa709a, #fee140)',
+  'linear-gradient(135deg, #a18cd1, #fbc2eb)',
+  'linear-gradient(135deg, #fccb90, #d57eeb)',
+  'linear-gradient(135deg, #e0c3fc, #8ec5fc)',
+  'linear-gradient(135deg, #f5576c, #ff6f61)',
+  'linear-gradient(135deg, #667eea, #43e97b)',
+  'linear-gradient(135deg, #fbc2eb, #a6c1ee)',
+  'linear-gradient(135deg, #fddb92, #d1fdff)',
+  'linear-gradient(135deg, #a1c4fd, #c2e9fb)',
+  'linear-gradient(135deg, #d4fc79, #96e6a1)',
+  'linear-gradient(135deg, #84fab0, #8fd3f4)',
+  'linear-gradient(135deg, #cfd9df, #e2ebf0)',
+  'linear-gradient(135deg, #ffecd2, #fcb69f)',
+  'linear-gradient(135deg, #ff9a9e, #fecfef)',
+  'linear-gradient(135deg, #a8edea, #fed6e3)',
+  'linear-gradient(135deg, #d299c2, #fef9d7)',
+  'linear-gradient(135deg, #89f7fe, #66a6ff)',
+  'linear-gradient(135deg, #fdcbf1, #e6dee9)',
+  'linear-gradient(135deg, #a6c0fe, #f68084)',
+  'linear-gradient(135deg, #fccb90, #d57eeb)',
+];
+
 export default function Auth() {
   const { user, loading, signIn } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  // Generate stable random tile set
+  const tiles = useMemo(() => {
+    const count = 48;
+    return Array.from({ length: count }, (_, i) => ({
+      id: i,
+      background: TILE_COLORS[i % TILE_COLORS.length],
+      span: Math.random() > 0.8 ? 2 : 1,
+    }));
+  }, []);
+
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-[#0a0a1a]">
+      <div className="flex h-screen items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
@@ -74,52 +112,45 @@ export default function Auth() {
 
   return (
     <div className="auth-scene">
-      {/* Ambient light effects */}
-      <div className="auth-ambient auth-ambient--1" />
-      <div className="auth-ambient auth-ambient--2" />
-      <div className="auth-ambient auth-ambient--3" />
-
-      {/* Ground line */}
-      <div className="auth-ground" />
-
-      {/* Walking character */}
-      <div className="auth-character">
-        <svg viewBox="0 0 120 200" className="auth-character__svg">
-          <circle cx="60" cy="28" r="16" fill="hsl(var(--primary))" opacity="0.9" />
-          <rect x="48" y="44" width="24" height="50" rx="8" fill="hsl(var(--primary))" opacity="0.8" />
-          <rect x="30" y="50" width="18" height="8" rx="4" fill="hsl(var(--primary))" opacity="0.7" className="auth-arm-left" />
-          <rect x="72" y="50" width="18" height="8" rx="4" fill="hsl(var(--primary))" opacity="0.7" className="auth-arm-right" />
-          <rect x="48" y="94" width="10" height="40" rx="5" fill="hsl(var(--primary))" opacity="0.75" className="auth-leg-left" />
-          <rect x="62" y="94" width="10" height="40" rx="5" fill="hsl(var(--primary))" opacity="0.75" className="auth-leg-right" />
-          <ellipse cx="53" cy="136" rx="8" ry="4" fill="hsl(var(--primary))" opacity="0.6" className="auth-leg-left" />
-          <ellipse cx="67" cy="136" rx="8" ry="4" fill="hsl(var(--primary))" opacity="0.6" className="auth-leg-right" />
-        </svg>
+      {/* Mosaic background */}
+      <div className="auth-mosaic">
+        {tiles.map((tile) => (
+          <div
+            key={tile.id}
+            className="auth-mosaic-tile"
+            style={{
+              background: tile.background,
+              gridRow: tile.span === 2 ? 'span 2' : undefined,
+            }}
+          />
+        ))}
       </div>
 
-      {/* Bag */}
-      <div className="auth-bag">
-        <svg viewBox="0 0 100 80" className="auth-bag__svg">
-          <rect x="10" y="20" width="80" height="55" rx="6" fill="hsl(var(--accent))" opacity="0.85" />
-          <rect x="10" y="15" width="80" height="12" rx="4" fill="hsl(var(--accent))" opacity="0.95" className="auth-bag__flap" />
-          <path d="M35 20 Q35 5, 50 5 Q65 5, 65 20" stroke="hsl(var(--accent))" strokeWidth="4" fill="none" opacity="0.7" />
-          <rect x="42" y="22" width="16" height="10" rx="3" fill="hsl(var(--primary))" opacity="0.5" />
-          <rect x="18" y="30" width="20" height="3" rx="1.5" fill="white" opacity="0.15" />
-        </svg>
-      </div>
+      {/* Blurred overlay */}
+      <div className="auth-mosaic-overlay" />
 
-      {/* Login form emerging from bag */}
-      <div className="auth-form-container">
-        <div className="auth-form-card">
+      {/* Login card */}
+      <div className="auth-card-wrapper">
+        <div className="auth-card">
+          {/* Logo / Brand */}
           <div className="text-center mb-6">
-            <h1 className="text-2xl font-bold font-display text-foreground">
-              Campus <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">Companion</span>
+            <h1 className="text-2xl font-bold text-foreground">
+              Campus{' '}
+              <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                Companion
+              </span>
             </h1>
-            <p className="text-muted-foreground text-sm mt-1">Sign in to continue</p>
+            <p className="text-muted-foreground text-sm mt-1.5">
+              Sign in to continue to your workspace
+            </p>
           </div>
 
+          {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1.5">
-              <Label htmlFor="email" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Email</Label>
+              <Label htmlFor="email" className="text-sm font-medium text-foreground">
+                Email
+              </Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -128,14 +159,16 @@ export default function Auth() {
                   placeholder="you@college.edu"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="pl-10 h-11 rounded-xl border-white/10 bg-white/5 text-foreground placeholder:text-muted-foreground/50 focus:bg-white/10 focus:border-primary/50 transition-all"
+                  className="pl-10 h-12 rounded-xl border-border bg-background text-foreground placeholder:text-muted-foreground/60 focus:border-primary/50 transition-all"
                 />
               </div>
               {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="password" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Password</Label>
+              <Label htmlFor="password" className="text-sm font-medium text-foreground">
+                Password
+              </Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -144,7 +177,7 @@ export default function Auth() {
                   placeholder="••••••••"
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  className="pl-10 h-11 rounded-xl border-white/10 bg-white/5 text-foreground placeholder:text-muted-foreground/50 focus:bg-white/10 focus:border-primary/50 transition-all"
+                  className="pl-10 h-12 rounded-xl border-border bg-background text-foreground placeholder:text-muted-foreground/60 focus:border-primary/50 transition-all"
                 />
               </div>
               {errors.password && <p className="text-xs text-destructive">{errors.password}</p>}
@@ -152,31 +185,25 @@ export default function Auth() {
 
             <Button
               type="submit"
-              className="w-full h-11 text-sm font-semibold rounded-xl gradient-primary border-0 hover:opacity-90 transition-all shadow-glow group mt-2"
+              className="w-full h-12 text-sm font-semibold rounded-xl bg-primary text-primary-foreground hover:opacity-90 transition-all shadow-md group mt-1"
               disabled={isSubmitting}
             >
               {isSubmitting ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 <>
-                  Sign In
+                  Login
                   <ArrowRight className="h-4 w-4 ml-1.5 transition-transform group-hover:translate-x-1" />
                 </>
               )}
             </Button>
           </form>
 
-          <p className="text-center text-[11px] text-muted-foreground/60 mt-5">
+          {/* Footer */}
+          <p className="text-center text-xs text-muted-foreground mt-6">
             Contact your administrator for access
           </p>
         </div>
-      </div>
-
-      {/* Floating particles */}
-      <div className="auth-particles">
-        {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="auth-particle" style={{ '--i': i } as React.CSSProperties} />
-        ))}
       </div>
     </div>
   );
