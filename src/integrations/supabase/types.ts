@@ -1064,6 +1064,73 @@ export type Database = {
         }
         Relationships: []
       }
+      internal_marks: {
+        Row: {
+          academic_year: string
+          course_id: string
+          created_at: string
+          exam_type: string
+          id: string
+          marks_obtained: number
+          max_marks: number
+          remarks: string | null
+          semester: string
+          student_id: string
+          teacher_id: string
+          updated_at: string
+        }
+        Insert: {
+          academic_year: string
+          course_id: string
+          created_at?: string
+          exam_type?: string
+          id?: string
+          marks_obtained?: number
+          max_marks?: number
+          remarks?: string | null
+          semester: string
+          student_id: string
+          teacher_id: string
+          updated_at?: string
+        }
+        Update: {
+          academic_year?: string
+          course_id?: string
+          created_at?: string
+          exam_type?: string
+          id?: string
+          marks_obtained?: number
+          max_marks?: number
+          remarks?: string | null
+          semester?: string
+          student_id?: string
+          teacher_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "internal_marks_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "internal_marks_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "internal_marks_teacher_id_fkey"
+            columns: ["teacher_id"]
+            isOneToOne: false
+            referencedRelation: "teachers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       interview_sessions: {
         Row: {
           candidate_email: string | null
@@ -1629,6 +1696,68 @@ export type Database = {
             columns: ["teacher_id"]
             isOneToOne: false
             referencedRelation: "teachers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      semester_results: {
+        Row: {
+          academic_year: string
+          cgpa: number | null
+          created_at: string
+          earned_credits: number
+          id: string
+          obtained_marks: number | null
+          percentage: number | null
+          published_at: string | null
+          semester: string
+          sgpa: number | null
+          status: string
+          student_id: string
+          total_credits: number
+          total_marks: number | null
+          updated_at: string
+        }
+        Insert: {
+          academic_year: string
+          cgpa?: number | null
+          created_at?: string
+          earned_credits?: number
+          id?: string
+          obtained_marks?: number | null
+          percentage?: number | null
+          published_at?: string | null
+          semester: string
+          sgpa?: number | null
+          status?: string
+          student_id: string
+          total_credits?: number
+          total_marks?: number | null
+          updated_at?: string
+        }
+        Update: {
+          academic_year?: string
+          cgpa?: number | null
+          created_at?: string
+          earned_credits?: number
+          id?: string
+          obtained_marks?: number | null
+          percentage?: number | null
+          published_at?: string | null
+          semester?: string
+          sgpa?: number | null
+          status?: string
+          student_id?: string
+          total_credits?: number
+          total_marks?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "semester_results_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
             referencedColumns: ["id"]
           },
         ]

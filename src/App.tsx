@@ -59,9 +59,11 @@ import StudentHolidays from "./pages/student/StudentHolidays";
 import StudentLibrary from "./pages/student/StudentLibrary";
 import StudentAssignments from "./pages/student/StudentAssignments";
 import StudentLeave from "./pages/student/StudentLeave";
+import StudentMarks from "./pages/student/StudentMarks";
 import TeacherHolidays from "./pages/teacher/TeacherHolidays";
 import TeacherAssignments from "./pages/teacher/TeacherAssignments";
 import TeacherLeave from "./pages/teacher/TeacherLeave";
+import TeacherMarks from "./pages/teacher/TeacherMarks";
 import HolidaysManagement from "./pages/admin/HolidaysManagement";
 import SettingsPage from "./pages/settings/SettingsPage";
 import MessagesPage from "./pages/MessagesPage";
@@ -339,6 +341,14 @@ const App = () => (
                   </ProtectedRoute>
                 }
               />
+              <Route
+                path="/teacher/marks"
+                element={
+                  <ProtectedRoute allowedRoles={['teacher']}>
+                    <TeacherMarks />
+                  </ProtectedRoute>
+                }
+              />
 
               {/* Student routes */}
               <Route
@@ -490,6 +500,14 @@ const App = () => (
                 element={
                   <ProtectedRoute allowedRoles={['student']}>
                     <StudentLeave />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/student/marks"
+                element={
+                  <ProtectedRoute allowedRoles={['student']}>
+                    <StudentMarks />
                   </ProtectedRoute>
                 }
               />
