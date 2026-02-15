@@ -196,6 +196,8 @@ export type Database = {
           book_id: string
           created_at: string
           due_date: string
+          fine_amount: number | null
+          fine_per_day: number | null
           id: string
           issue_date: string
           issued_by: string | null
@@ -209,6 +211,8 @@ export type Database = {
           book_id: string
           created_at?: string
           due_date?: string
+          fine_amount?: number | null
+          fine_per_day?: number | null
           id?: string
           issue_date?: string
           issued_by?: string | null
@@ -222,6 +226,8 @@ export type Database = {
           book_id?: string
           created_at?: string
           due_date?: string
+          fine_amount?: number | null
+          fine_per_day?: number | null
           id?: string
           issue_date?: string
           issued_by?: string | null
@@ -289,6 +295,51 @@ export type Database = {
           },
           {
             foreignKeyName: "book_requests_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      book_reservations: {
+        Row: {
+          book_id: string
+          created_at: string
+          expires_at: string
+          id: string
+          reserved_at: string
+          status: string
+          student_id: string
+        }
+        Insert: {
+          book_id: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          reserved_at?: string
+          status?: string
+          student_id: string
+        }
+        Update: {
+          book_id?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          reserved_at?: string
+          status?: string
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "book_reservations_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "library_books"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "book_reservations_student_id_fkey"
             columns: ["student_id"]
             isOneToOne: false
             referencedRelation: "students"
@@ -1405,6 +1456,42 @@ export type Database = {
           sender_id?: string
           subject?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          category: string
+          created_at: string
+          id: string
+          is_read: boolean
+          message: string
+          related_id: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message: string
+          related_id?: string | null
+          title: string
+          type?: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message?: string
+          related_id?: string | null
+          title?: string
+          type?: string
+          user_id?: string
         }
         Relationships: []
       }

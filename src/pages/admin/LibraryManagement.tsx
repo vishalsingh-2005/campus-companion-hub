@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { PageHeader } from '@/components/ui/page-header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,24 +13,54 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useLibrary, LibraryBook } from '@/hooks/useLibrary';
 import { useStudents } from '@/hooks/useStudents';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Search, Plus, BookOpen, BookCheck, BookX, Send, Trash2, Edit, RotateCcw } from 'lucide-react';
-import { format } from 'date-fns';
+import { Search, Plus, BookOpen, BookCheck, BookX, Send, Trash2, Edit, RotateCcw, DollarSign, Filter } from 'lucide-react';
+import { format, differenceInDays } from 'date-fns';
 import { StatCard } from '@/components/ui/stat-card';
 import { toast } from 'sonner';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip as RechartsTooltip } from 'recharts';
+
+const FINE_PER_DAY = 2; // ₹2 per day
+
+function calculateFine(dueDate: string, returnDate?: string | null): number {
+  const due = new Date(dueDate);
+  const ret = returnDate ? new Date(returnDate) : new Date();
+  const overdueDays = differenceInDays(ret, due);
+  return overdueDays > 0 ? overdueDays * FINE_PER_DAY : 0;
+}
 
 export default function LibraryManagement() {
   const { books, issues, requests, loading, addBook, updateBook, deleteBook, issueBook, returnBook, updateRequest } = useLibrary();
   const { students } = useStudents();
   const [search, setSearch] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('all');
   const [bookDialog, setBookDialog] = useState(false);
   const [issueDialog, setIssueDialog] = useState(false);
   const [editingBook, setEditingBook] = useState<LibraryBook | null>(null);
   const [bookForm, setBookForm] = useState({ title: '', author: '', isbn: '', category: 'General', total_quantity: 1, available_quantity: 1, description: '', publisher: '' });
   const [issueForm, setIssueForm] = useState({ book_id: '', student_id: '', due_date: '' });
 
-  const filteredBooks = books.filter(b => `${b.title} ${b.author} ${b.category}`.toLowerCase().includes(search.toLowerCase()));
+  const categories = useMemo(() => {
+    const cats = new Set(books.map(b => b.category));
+    return Array.from(cats).sort();
+  }, [books]);
+
+  const filteredBooks = books.filter(b => {
+    const matchesSearch = `${b.title} ${b.author} ${b.isbn || ''}`.toLowerCase().includes(search.toLowerCase());
+    const matchesCategory = categoryFilter === 'all' || b.category === categoryFilter;
+    return matchesSearch && matchesCategory;
+  });
+
   const activeIssues = issues.filter(i => i.status === 'issued');
   const pendingRequests = requests.filter(r => r.status === 'pending');
+  const overdueIssues = activeIssues.filter(i => new Date(i.due_date) < new Date());
+  const totalFines = activeIssues.reduce((sum, i) => sum + calculateFine(i.due_date), 0);
+
+  // Category distribution for chart
+  const categoryData = useMemo(() => {
+    const map = new Map<string, number>();
+    books.forEach(b => map.set(b.category, (map.get(b.category) || 0) + b.total_quantity));
+    return Array.from(map.entries()).map(([name, value]) => ({ name, value }));
+  }, [books]);
 
   const handleSaveBook = async () => {
     if (!bookForm.title || !bookForm.author) { toast.error('Title and Author are required'); return; }
@@ -58,40 +88,72 @@ export default function LibraryManagement() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <PageHeader title="Library Management" description="Manage books, issue/return, and student requests" />
+      <PageHeader title="Library Management" description="Manage books, issue/return, fines, and student requests" />
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard title="Total Books" value={books.length} icon={BookOpen} />
-        <StatCard title="Books Issued" value={activeIssues.length} icon={BookCheck} variant="info" />
-        <StatCard title="Pending Requests" value={pendingRequests.length} icon={Send} variant="warning" />
-        <StatCard title="Overdue" value={activeIssues.filter(i => new Date(i.due_date) < new Date()).length} icon={BookX} variant="destructive" />
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        <StatCard title="Total Books" value={books.reduce((s, b) => s + b.total_quantity, 0)} icon={BookOpen} />
+        <StatCard title="Titles" value={books.length} icon={BookOpen} variant="info" />
+        <StatCard title="Books Issued" value={activeIssues.length} icon={BookCheck} variant="warning" />
+        <StatCard title="Overdue" value={overdueIssues.length} icon={BookX} variant="destructive" />
+        <StatCard title="Pending Fines" value={`₹${totalFines}`} icon={DollarSign} variant={totalFines > 0 ? 'destructive' : 'success'} />
       </div>
+
+      {/* Inventory Chart */}
+      {categoryData.length > 0 && (
+        <Card>
+          <CardHeader><CardTitle className="text-base">Inventory by Category</CardTitle></CardHeader>
+          <CardContent>
+            <div className="h-[200px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={categoryData}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <XAxis dataKey="name" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} />
+                  <YAxis tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} />
+                  <RechartsTooltip contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px' }} />
+                  <Bar dataKey="value" name="Books" fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Tabs defaultValue="inventory">
         <TabsList>
           <TabsTrigger value="inventory">Inventory</TabsTrigger>
-          <TabsTrigger value="issued">Issued Books ({activeIssues.length})</TabsTrigger>
+          <TabsTrigger value="issued">Issued ({activeIssues.length})</TabsTrigger>
           <TabsTrigger value="requests">Requests ({pendingRequests.length})</TabsTrigger>
           <TabsTrigger value="history">Return History</TabsTrigger>
         </TabsList>
 
         <TabsContent value="inventory" className="space-y-4">
           <div className="flex flex-col sm:flex-row gap-3">
-            <div className="relative flex-1"><Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input placeholder="Search books..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" /></div>
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input placeholder="Search by title, author, or ISBN..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
+            </div>
+            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+              <SelectTrigger className="w-40"><Filter className="h-4 w-4 mr-1" /><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                {categories.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+              </SelectContent>
+            </Select>
             <Button onClick={() => { resetBookForm(); setBookDialog(true); }} className="gap-2"><Plus className="h-4 w-4" />Add Book</Button>
             <Button variant="outline" onClick={() => setIssueDialog(true)} className="gap-2"><BookCheck className="h-4 w-4" />Issue Book</Button>
           </div>
           <Card>
             <CardContent className="p-0">
               <Table>
-                <TableHeader><TableRow><TableHead>Title</TableHead><TableHead>Author</TableHead><TableHead>Category</TableHead><TableHead>Available</TableHead><TableHead>Total</TableHead><TableHead>Actions</TableHead></TableRow></TableHeader>
+                <TableHeader><TableRow><TableHead>Title</TableHead><TableHead>Author</TableHead><TableHead>ISBN</TableHead><TableHead>Category</TableHead><TableHead>Available</TableHead><TableHead>Total</TableHead><TableHead>Actions</TableHead></TableRow></TableHeader>
                 <TableBody>
                   {filteredBooks.length === 0 ? (
-                    <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">No books found</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">No books found</TableCell></TableRow>
                   ) : filteredBooks.map(book => (
                     <TableRow key={book.id}>
                       <TableCell className="font-medium">{book.title}</TableCell>
                       <TableCell>{book.author}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground">{book.isbn || '—'}</TableCell>
                       <TableCell><Badge variant="outline">{book.category}</Badge></TableCell>
                       <TableCell><Badge variant={book.available_quantity > 0 ? 'default' : 'destructive'}>{book.available_quantity}</Badge></TableCell>
                       <TableCell>{book.total_quantity}</TableCell>
@@ -113,22 +175,25 @@ export default function LibraryManagement() {
           <Card>
             <CardContent className="p-0">
               <Table>
-                <TableHeader><TableRow><TableHead>Book</TableHead><TableHead>Student</TableHead><TableHead>Issued</TableHead><TableHead>Due</TableHead><TableHead>Status</TableHead><TableHead>Actions</TableHead></TableRow></TableHeader>
+                <TableHeader><TableRow><TableHead>Book</TableHead><TableHead>Student</TableHead><TableHead>Issued</TableHead><TableHead>Due</TableHead><TableHead>Fine</TableHead><TableHead>Status</TableHead><TableHead>Actions</TableHead></TableRow></TableHeader>
                 <TableBody>
                   {activeIssues.length === 0 ? (
-                    <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">No active issues</TableCell></TableRow>
-                  ) : activeIssues.map(issue => (
-                    <TableRow key={issue.id}>
-                      <TableCell className="font-medium">{issue.library_books?.title}</TableCell>
-                      <TableCell>{issue.students?.first_name} {issue.students?.last_name}</TableCell>
-                      <TableCell>{format(new Date(issue.issue_date), 'MMM d, yyyy')}</TableCell>
-                      <TableCell>
-                        <span className={new Date(issue.due_date) < new Date() ? 'text-destructive font-medium' : ''}>{format(new Date(issue.due_date), 'MMM d, yyyy')}</span>
-                      </TableCell>
-                      <TableCell><Badge variant={new Date(issue.due_date) < new Date() ? 'destructive' : 'default'}>{new Date(issue.due_date) < new Date() ? 'Overdue' : 'Issued'}</Badge></TableCell>
-                      <TableCell><Button size="sm" variant="outline" className="gap-1" onClick={() => returnBook(issue.id, issue.book_id)}><RotateCcw className="h-3 w-3" />Return</Button></TableCell>
-                    </TableRow>
-                  ))}
+                    <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">No active issues</TableCell></TableRow>
+                  ) : activeIssues.map(issue => {
+                    const fine = calculateFine(issue.due_date);
+                    const isOverdue = new Date(issue.due_date) < new Date();
+                    return (
+                      <TableRow key={issue.id}>
+                        <TableCell className="font-medium">{issue.library_books?.title}</TableCell>
+                        <TableCell>{issue.students?.first_name} {issue.students?.last_name}</TableCell>
+                        <TableCell>{format(new Date(issue.issue_date), 'MMM d, yyyy')}</TableCell>
+                        <TableCell><span className={isOverdue ? 'text-destructive font-medium' : ''}>{format(new Date(issue.due_date), 'MMM d, yyyy')}</span></TableCell>
+                        <TableCell>{fine > 0 ? <Badge variant="destructive">₹{fine}</Badge> : <span className="text-muted-foreground">—</span>}</TableCell>
+                        <TableCell><Badge variant={isOverdue ? 'destructive' : 'default'}>{isOverdue ? 'Overdue' : 'Issued'}</Badge></TableCell>
+                        <TableCell><Button size="sm" variant="outline" className="gap-1" onClick={() => returnBook(issue.id, issue.book_id)}><RotateCcw className="h-3 w-3" />Return</Button></TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </CardContent>
@@ -169,18 +234,22 @@ export default function LibraryManagement() {
           <Card>
             <CardContent className="p-0">
               <Table>
-                <TableHeader><TableRow><TableHead>Book</TableHead><TableHead>Student</TableHead><TableHead>Issued</TableHead><TableHead>Returned</TableHead></TableRow></TableHeader>
+                <TableHeader><TableRow><TableHead>Book</TableHead><TableHead>Student</TableHead><TableHead>Issued</TableHead><TableHead>Returned</TableHead><TableHead>Fine Charged</TableHead></TableRow></TableHeader>
                 <TableBody>
                   {issues.filter(i => i.status === 'returned').length === 0 ? (
-                    <TableRow><TableCell colSpan={4} className="text-center py-8 text-muted-foreground">No returns yet</TableCell></TableRow>
-                  ) : issues.filter(i => i.status === 'returned').map(issue => (
-                    <TableRow key={issue.id}>
-                      <TableCell className="font-medium">{issue.library_books?.title}</TableCell>
-                      <TableCell>{issue.students?.first_name} {issue.students?.last_name}</TableCell>
-                      <TableCell>{format(new Date(issue.issue_date), 'MMM d, yyyy')}</TableCell>
-                      <TableCell>{issue.return_date ? format(new Date(issue.return_date), 'MMM d, yyyy') : '-'}</TableCell>
-                    </TableRow>
-                  ))}
+                    <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">No returns yet</TableCell></TableRow>
+                  ) : issues.filter(i => i.status === 'returned').map(issue => {
+                    const fine = calculateFine(issue.due_date, issue.return_date);
+                    return (
+                      <TableRow key={issue.id}>
+                        <TableCell className="font-medium">{issue.library_books?.title}</TableCell>
+                        <TableCell>{issue.students?.first_name} {issue.students?.last_name}</TableCell>
+                        <TableCell>{format(new Date(issue.issue_date), 'MMM d, yyyy')}</TableCell>
+                        <TableCell>{issue.return_date ? format(new Date(issue.return_date), 'MMM d, yyyy') : '-'}</TableCell>
+                        <TableCell>{fine > 0 ? <Badge variant="destructive">₹{fine}</Badge> : <span className="text-success">No fine</span>}</TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </CardContent>

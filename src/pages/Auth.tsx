@@ -1,10 +1,10 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, Mail, Lock, ArrowRight } from 'lucide-react';
+import { Loader2, Mail, Lock, ArrowRight, GraduationCap, Shield, BookOpen, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import './Auth.css';
@@ -14,32 +14,11 @@ const loginSchema = z.object({
   password: z.string().min(6, 'Password must be at least 6 characters'),
 });
 
-// Vibrant tile colors for the mosaic background
-const TILE_COLORS = [
-  'linear-gradient(135deg, #667eea, #764ba2)',
-  'linear-gradient(135deg, #f093fb, #f5576c)',
-  'linear-gradient(135deg, #4facfe, #00f2fe)',
-  'linear-gradient(135deg, #43e97b, #38f9d7)',
-  'linear-gradient(135deg, #fa709a, #fee140)',
-  'linear-gradient(135deg, #a18cd1, #fbc2eb)',
-  'linear-gradient(135deg, #fccb90, #d57eeb)',
-  'linear-gradient(135deg, #e0c3fc, #8ec5fc)',
-  'linear-gradient(135deg, #f5576c, #ff6f61)',
-  'linear-gradient(135deg, #667eea, #43e97b)',
-  'linear-gradient(135deg, #fbc2eb, #a6c1ee)',
-  'linear-gradient(135deg, #fddb92, #d1fdff)',
-  'linear-gradient(135deg, #a1c4fd, #c2e9fb)',
-  'linear-gradient(135deg, #d4fc79, #96e6a1)',
-  'linear-gradient(135deg, #84fab0, #8fd3f4)',
-  'linear-gradient(135deg, #cfd9df, #e2ebf0)',
-  'linear-gradient(135deg, #ffecd2, #fcb69f)',
-  'linear-gradient(135deg, #ff9a9e, #fecfef)',
-  'linear-gradient(135deg, #a8edea, #fed6e3)',
-  'linear-gradient(135deg, #d299c2, #fef9d7)',
-  'linear-gradient(135deg, #89f7fe, #66a6ff)',
-  'linear-gradient(135deg, #fdcbf1, #e6dee9)',
-  'linear-gradient(135deg, #a6c0fe, #f68084)',
-  'linear-gradient(135deg, #fccb90, #d57eeb)',
+const FEATURES = [
+  { icon: GraduationCap, label: 'Academic Management', desc: 'Marks, GPA & Results' },
+  { icon: BookOpen, label: 'Smart Library', desc: 'Books, Fines & Reservations' },
+  { icon: Users, label: 'Live Sessions', desc: 'Video Classes & Interviews' },
+  { icon: Shield, label: 'Secure Attendance', desc: 'QR + GPS Verification' },
 ];
 
 export default function Auth() {
@@ -47,16 +26,6 @@ export default function Auth() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [errors, setErrors] = useState<Record<string, string>>({});
-
-  // Generate stable random tile set
-  const tiles = useMemo(() => {
-    const count = 48;
-    return Array.from({ length: count }, (_, i) => ({
-      id: i,
-      background: TILE_COLORS[i % TILE_COLORS.length],
-      span: Math.random() > 0.8 ? 2 : 1,
-    }));
-  }, []);
 
   if (loading) {
     return (
@@ -79,9 +48,7 @@ export default function Auth() {
       if (error instanceof z.ZodError) {
         const newErrors: Record<string, string> = {};
         error.errors.forEach((err) => {
-          if (err.path[0]) {
-            newErrors[err.path[0] as string] = err.message;
-          }
+          if (err.path[0]) newErrors[err.path[0] as string] = err.message;
         });
         setErrors(newErrors);
       }
@@ -92,16 +59,11 @@ export default function Auth() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm()) return;
-
     setIsSubmitting(true);
     try {
       const { error } = await signIn(formData.email, formData.password);
       if (error) {
-        if (error.message.includes('Invalid login credentials')) {
-          toast.error('Invalid email or password');
-        } else {
-          toast.error(error.message);
-        }
+        toast.error(error.message.includes('Invalid login credentials') ? 'Invalid email or password' : error.message);
       } else {
         toast.success('Welcome back!');
       }
@@ -111,55 +73,77 @@ export default function Auth() {
   };
 
   return (
-    <div className="auth-scene">
-      {/* Mosaic background */}
-      <div className="auth-mosaic">
-        {tiles.map((tile) => (
-          <div
-            key={tile.id}
-            className="auth-mosaic-tile"
-            style={{
-              background: tile.background,
-              gridRow: tile.span === 2 ? 'span 2' : undefined,
-            }}
-          />
-        ))}
+    <div className="auth-split">
+      {/* Left Panel – Brand & Features */}
+      <div className="auth-brand-panel">
+        <div className="auth-brand-content">
+          {/* Floating accent shapes */}
+          <div className="auth-shape auth-shape-1" />
+          <div className="auth-shape auth-shape-2" />
+          <div className="auth-shape auth-shape-3" />
+
+          <div className="relative z-10">
+            <div className="auth-brand-logo">
+              <GraduationCap className="h-8 w-8 text-white" />
+            </div>
+            <h1 className="auth-brand-title">
+              Campus<br />
+              <span className="auth-brand-highlight">Companion</span>
+            </h1>
+            <p className="auth-brand-subtitle">
+              Complete Academic ERP for modern institutions
+            </p>
+
+            <div className="auth-features">
+              {FEATURES.map((f, i) => (
+                <div key={i} className="auth-feature-item" style={{ animationDelay: `${0.8 + i * 0.15}s` }}>
+                  <div className="auth-feature-icon">
+                    <f.icon className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <p className="auth-feature-label">{f.label}</p>
+                    <p className="auth-feature-desc">{f.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <p className="auth-brand-footer">
+            Trusted by institutions worldwide
+          </p>
+        </div>
       </div>
 
-      {/* Blurred overlay */}
-      <div className="auth-mosaic-overlay" />
-
-      {/* Login card */}
-      <div className="auth-card-wrapper">
-        <div className="auth-card">
-          {/* Logo / Brand */}
-          <div className="text-center mb-6">
-            <h1 className="text-2xl font-bold text-foreground">
-              Campus{' '}
-              <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                Companion
-              </span>
-            </h1>
+      {/* Right Panel – Login Form */}
+      <div className="auth-form-panel">
+        <div className="auth-form-container">
+          <div className="text-center mb-8">
+            <div className="auth-form-logo-mobile">
+              <GraduationCap className="h-6 w-6 text-primary" />
+            </div>
+            <h2 className="text-2xl font-bold text-foreground mt-4">
+              Welcome back
+            </h2>
             <p className="text-muted-foreground text-sm mt-1.5">
-              Sign in to continue to your workspace
+              Sign in to your workspace
             </p>
           </div>
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-1.5">
               <Label htmlFor="email" className="text-sm font-medium text-foreground">
-                Email
+                Email address
               </Label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   id="email"
                   type="email"
-                  placeholder="you@college.edu"
+                  placeholder="you@institution.edu"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="pl-10 h-12 rounded-xl border-border bg-background text-foreground placeholder:text-muted-foreground/60 focus:border-primary/50 transition-all"
+                  className="pl-11 h-12 rounded-xl border-border bg-background text-foreground placeholder:text-muted-foreground/50 focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all"
                 />
               </div>
               {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
@@ -170,14 +154,14 @@ export default function Auth() {
                 Password
               </Label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   id="password"
                   type="password"
                   placeholder="••••••••"
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  className="pl-10 h-12 rounded-xl border-border bg-background text-foreground placeholder:text-muted-foreground/60 focus:border-primary/50 transition-all"
+                  className="pl-11 h-12 rounded-xl border-border bg-background text-foreground placeholder:text-muted-foreground/50 focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all"
                 />
               </div>
               {errors.password && <p className="text-xs text-destructive">{errors.password}</p>}
@@ -185,23 +169,22 @@ export default function Auth() {
 
             <Button
               type="submit"
-              className="w-full h-12 text-sm font-semibold rounded-xl bg-primary text-primary-foreground hover:opacity-90 transition-all shadow-md group mt-1"
+              className="w-full h-12 text-sm font-semibold rounded-xl bg-primary text-primary-foreground hover:opacity-90 transition-all shadow-lg shadow-primary/25 group"
               disabled={isSubmitting}
             >
               {isSubmitting ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 <>
-                  Login
+                  Sign In
                   <ArrowRight className="h-4 w-4 ml-1.5 transition-transform group-hover:translate-x-1" />
                 </>
               )}
             </Button>
           </form>
 
-          {/* Footer */}
-          <p className="text-center text-xs text-muted-foreground mt-6">
-            Contact your administrator for access
+          <p className="text-center text-xs text-muted-foreground mt-8">
+            Contact your administrator for account access
           </p>
         </div>
       </div>

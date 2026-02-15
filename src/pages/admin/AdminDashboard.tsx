@@ -4,39 +4,64 @@ import { PageHeader } from '@/components/ui/page-header';
 import { StatCard } from '@/components/ui/stat-card';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import {
   Users, GraduationCap, BookOpen, ClipboardList,
-  ArrowRight, UserPlus, Shield,
+  ArrowRight, UserPlus, Shield, Calendar, BookCheck,
+  FileText, AlertTriangle, Bell, CheckCircle,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Skeleton } from '@/components/ui/skeleton';
+import { format } from 'date-fns';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip } from 'recharts';
 
 export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ students: 0, teachers: 0, courses: 0, enrollments: 0 });
+  const [pendingApprovals, setPendingApprovals] = useState(0);
+  const [pendingLeaves, setPendingLeaves] = useState(0);
+  const [overdueBooks, setOverdueBooks] = useState(0);
+  const [recentActivity, setRecentActivity] = useState<{ label: string; time: string; type: string }[]>([]);
 
   useEffect(() => {
-    async function fetchStats() {
+    async function fetchAll() {
       try {
-        const [s, t, c, e] = await Promise.all([
+        const [s, t, c, e, approvals, leaves, bookIssues, recentEvents] = await Promise.all([
           supabase.from('students').select('id', { count: 'exact', head: true }),
           supabase.from('teachers').select('id', { count: 'exact', head: true }),
           supabase.from('courses').select('id', { count: 'exact', head: true }),
           supabase.from('course_enrollments').select('id', { count: 'exact', head: true }),
+          supabase.from('profile_update_requests').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
+          supabase.from('leave_requests').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
+          supabase.from('book_issues').select('id, due_date').eq('status', 'issued'),
+          supabase.from('events').select('id, title, created_at, status').order('created_at', { ascending: false }).limit(5),
         ]);
+
         setStats({
           students: s.count ?? 0,
           teachers: t.count ?? 0,
           courses: c.count ?? 0,
           enrollments: e.count ?? 0,
         });
+        setPendingApprovals(approvals.count ?? 0);
+        setPendingLeaves(leaves.count ?? 0);
+        
+        const overdue = (bookIssues.data || []).filter((i: any) => new Date(i.due_date) < new Date()).length;
+        setOverdueBooks(overdue);
+
+        const activity = (recentEvents.data || []).map((ev: any) => ({
+          label: `Event "${ev.title}" ${ev.status}`,
+          time: format(new Date(ev.created_at), 'MMM d, h:mm a'),
+          type: 'event',
+        }));
+        setRecentActivity(activity);
       } catch (err) {
         console.error('Error fetching stats:', err);
       } finally {
         setLoading(false);
       }
     }
-    fetchStats();
+    fetchAll();
   }, []);
 
   if (loading) {
@@ -51,11 +76,17 @@ export default function AdminDashboard() {
   }
 
   const quickActions = [
-    { label: 'Add Student', href: '/students', icon: UserPlus, color: 'bg-emerald-500' },
-    { label: 'Add Teacher', href: '/teachers', icon: Users, color: 'bg-blue-500' },
-    { label: 'Add Course', href: '/courses', icon: BookOpen, color: 'bg-purple-500' },
-    { label: 'Enrollments', href: '/enrollments', icon: ClipboardList, color: 'bg-orange-500' },
+    { label: 'Add Student', href: '/students', icon: UserPlus, color: 'bg-success' },
+    { label: 'Add Teacher', href: '/teachers', icon: Users, color: 'bg-info' },
+    { label: 'Add Course', href: '/courses', icon: BookOpen, color: 'bg-primary' },
+    { label: 'Enrollments', href: '/enrollments', icon: ClipboardList, color: 'bg-accent' },
   ];
+
+  const enrollmentData = [
+    { name: 'Students', value: stats.students, fill: 'hsl(var(--primary))' },
+    { name: 'Teachers', value: stats.teachers, fill: 'hsl(var(--info))' },
+    { name: 'Courses', value: stats.courses, fill: 'hsl(var(--warning))' },
+  ].filter(d => d.value > 0);
 
   return (
     <div className="space-y-4 sm:space-y-6 animate-fade-in">
@@ -66,6 +97,7 @@ export default function AdminDashboard() {
         </div>
       </PageHeader>
 
+      {/* Stats */}
       <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
         <StatCard title="Students" value={stats.students} icon={GraduationCap} />
         <StatCard title="Teachers" value={stats.teachers} icon={Users} variant="info" />
@@ -73,26 +105,135 @@ export default function AdminDashboard() {
         <StatCard title="Enrollments" value={stats.enrollments} icon={ClipboardList} variant="success" />
       </div>
 
-      <Card>
-        <CardHeader className="p-4 sm:p-6">
-          <CardTitle className="text-lg sm:text-2xl">Quick Actions</CardTitle>
-        </CardHeader>
-        <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">
-          <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
-            {quickActions.map((a) => (
-              <Link key={a.label} to={a.href}>
-                <Button variant="outline" className="w-full h-auto py-3 sm:py-4 flex flex-col items-center gap-1.5 sm:gap-2 hover:bg-muted/50 transition-all group active:scale-[0.97]">
-                  <div className={`p-2 sm:p-3 rounded-lg ${a.color} text-white`}>
-                    <a.icon className="h-4 w-4 sm:h-5 sm:w-5" />
+      {/* Pending Actions */}
+      {(pendingApprovals > 0 || pendingLeaves > 0 || overdueBooks > 0) && (
+        <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-3">
+          {pendingApprovals > 0 && (
+            <Link to="/admin/profile-approvals">
+              <Card className="border-warning/30 bg-warning/5 hover:bg-warning/10 transition-colors cursor-pointer">
+                <CardContent className="flex items-center gap-3 p-4">
+                  <div className="p-2 rounded-lg bg-warning/20">
+                    <FileText className="h-5 w-5 text-warning" />
                   </div>
-                  <span className="font-medium text-xs sm:text-sm">{a.label}</span>
-                  <ArrowRight className="h-3.5 w-3.5 sm:h-4 sm:w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
-                </Button>
-              </Link>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+                  <div>
+                    <p className="font-semibold text-sm">{pendingApprovals} Profile Approvals</p>
+                    <p className="text-xs text-muted-foreground">Pending review</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+          )}
+          {pendingLeaves > 0 && (
+            <Card className="border-info/30 bg-info/5">
+              <CardContent className="flex items-center gap-3 p-4">
+                <div className="p-2 rounded-lg bg-info/20">
+                  <ClipboardList className="h-5 w-5 text-info" />
+                </div>
+                <div>
+                  <p className="font-semibold text-sm">{pendingLeaves} Leave Requests</p>
+                  <p className="text-xs text-muted-foreground">Awaiting approval</p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+          {overdueBooks > 0 && (
+            <Link to="/admin/library">
+              <Card className="border-destructive/30 bg-destructive/5 hover:bg-destructive/10 transition-colors cursor-pointer">
+                <CardContent className="flex items-center gap-3 p-4">
+                  <div className="p-2 rounded-lg bg-destructive/20">
+                    <AlertTriangle className="h-5 w-5 text-destructive" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-sm">{overdueBooks} Overdue Books</p>
+                    <p className="text-xs text-muted-foreground">Needs attention</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+          )}
+        </div>
+      )}
+
+      <div className="grid gap-4 lg:grid-cols-3">
+        {/* Distribution Chart */}
+        {enrollmentData.length > 0 && (
+          <Card>
+            <CardHeader className="p-4 sm:p-6">
+              <CardTitle className="text-base">System Distribution</CardTitle>
+            </CardHeader>
+            <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">
+              <div className="h-[200px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie data={enrollmentData} cx="50%" cy="50%" innerRadius={45} outerRadius={75} paddingAngle={4} dataKey="value">
+                      {enrollmentData.map((entry, i) => (
+                        <Cell key={i} fill={entry.fill} />
+                      ))}
+                    </Pie>
+                    <RechartsTooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="flex justify-center gap-4 mt-2">
+                {enrollmentData.map((d, i) => (
+                  <div key={i} className="flex items-center gap-1.5 text-xs">
+                    <span className="h-2.5 w-2.5 rounded-full" style={{ background: d.fill }} />
+                    {d.name} ({d.value})
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Recent Activity */}
+        <Card className="lg:col-span-1">
+          <CardHeader className="p-4 sm:p-6">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Bell className="h-4 w-4 text-primary" />
+              Recent Activity
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">
+            {recentActivity.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">No recent activity</p>
+            ) : (
+              <div className="space-y-3">
+                {recentActivity.map((a, i) => (
+                  <div key={i} className="flex items-start gap-3 text-sm">
+                    <div className="h-2 w-2 rounded-full bg-primary mt-1.5 flex-shrink-0" />
+                    <div>
+                      <p className="text-foreground">{a.label}</p>
+                      <p className="text-xs text-muted-foreground">{a.time}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Quick Actions */}
+        <Card>
+          <CardHeader className="p-4 sm:p-6">
+            <CardTitle className="text-base">Quick Actions</CardTitle>
+          </CardHeader>
+          <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">
+            <div className="grid gap-3 grid-cols-2">
+              {quickActions.map((a) => (
+                <Link key={a.label} to={a.href}>
+                  <Button variant="outline" className="w-full h-auto py-3 flex flex-col items-center gap-1.5 hover:bg-muted/50 transition-all group active:scale-[0.97]">
+                    <div className={`p-2 rounded-lg ${a.color} text-white`}>
+                      <a.icon className="h-4 w-4" />
+                    </div>
+                    <span className="font-medium text-xs">{a.label}</span>
+                  </Button>
+                </Link>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
