@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { PageHeader } from '@/components/ui/page-header';
 import { StatCard } from '@/components/ui/stat-card';
@@ -7,13 +7,32 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
   Users, GraduationCap, BookOpen, ClipboardList,
-  ArrowRight, UserPlus, Shield, Calendar, BookCheck,
-  FileText, AlertTriangle, Bell, CheckCircle,
+  UserPlus, Shield, FileText, AlertTriangle, Bell,
+  Activity, ArrowRight, Calendar, MessageSquare,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip } from 'recharts';
+import { useAuditLogs, AuditLogEntry } from '@/hooks/useAuditLog';
+
+const ACTION_LABELS: Record<string, { label: string; color: string }> = {
+  login: { label: 'Logged in', color: 'bg-info/10 text-info' },
+  logout: { label: 'Logged out', color: 'bg-muted text-muted-foreground' },
+  leave_approved: { label: 'Leave approved', color: 'bg-success/10 text-success' },
+  leave_rejected: { label: 'Leave rejected', color: 'bg-destructive/10 text-destructive' },
+  grade_updated: { label: 'Grade updated', color: 'bg-warning/10 text-warning' },
+  grade_published: { label: 'Results published', color: 'bg-primary/10 text-primary' },
+  attendance_edited: { label: 'Attendance edited', color: 'bg-warning/10 text-warning' },
+  attendance_marked: { label: 'Attendance marked', color: 'bg-success/10 text-success' },
+  user_created: { label: 'User created', color: 'bg-primary/10 text-primary' },
+  password_reset: { label: 'Password reset', color: 'bg-warning/10 text-warning' },
+  profile_approved: { label: 'Profile approved', color: 'bg-success/10 text-success' },
+  profile_rejected: { label: 'Profile rejected', color: 'bg-destructive/10 text-destructive' },
+  student_created: { label: 'Student added', color: 'bg-primary/10 text-primary' },
+  teacher_created: { label: 'Teacher added', color: 'bg-info/10 text-info' },
+  book_issued: { label: 'Book issued', color: 'bg-success/10 text-success' },
+  book_returned: { label: 'Book returned', color: 'bg-info/10 text-info' },
+};
 
 export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
@@ -21,12 +40,13 @@ export default function AdminDashboard() {
   const [pendingApprovals, setPendingApprovals] = useState(0);
   const [pendingLeaves, setPendingLeaves] = useState(0);
   const [overdueBooks, setOverdueBooks] = useState(0);
-  const [recentActivity, setRecentActivity] = useState<{ label: string; time: string; type: string }[]>([]);
+  const [auditEntries, setAuditEntries] = useState<AuditLogEntry[]>([]);
+  const { fetchLogs } = useAuditLogs();
 
   useEffect(() => {
     async function fetchAll() {
       try {
-        const [s, t, c, e, approvals, leaves, bookIssues, recentEvents] = await Promise.all([
+        const [s, t, c, e, approvals, leaves, bookIssues, logs] = await Promise.all([
           supabase.from('students').select('id', { count: 'exact', head: true }),
           supabase.from('teachers').select('id', { count: 'exact', head: true }),
           supabase.from('courses').select('id', { count: 'exact', head: true }),
@@ -34,7 +54,7 @@ export default function AdminDashboard() {
           supabase.from('profile_update_requests').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
           supabase.from('leave_requests').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
           supabase.from('book_issues').select('id, due_date').eq('status', 'issued'),
-          supabase.from('events').select('id, title, created_at, status').order('created_at', { ascending: false }).limit(5),
+          fetchLogs(15),
         ]);
 
         setStats({
@@ -45,16 +65,9 @@ export default function AdminDashboard() {
         });
         setPendingApprovals(approvals.count ?? 0);
         setPendingLeaves(leaves.count ?? 0);
-        
         const overdue = (bookIssues.data || []).filter((i: any) => new Date(i.due_date) < new Date()).length;
         setOverdueBooks(overdue);
-
-        const activity = (recentEvents.data || []).map((ev: any) => ({
-          label: `Event "${ev.title}" ${ev.status}`,
-          time: format(new Date(ev.created_at), 'MMM d, h:mm a'),
-          type: 'event',
-        }));
-        setRecentActivity(activity);
+        setAuditEntries(logs);
       } catch (err) {
         console.error('Error fetching stats:', err);
       } finally {
@@ -62,43 +75,37 @@ export default function AdminDashboard() {
       }
     }
     fetchAll();
-  }, []);
+  }, [fetchLogs]);
+
+  const quickActions = useMemo(() => [
+    { label: 'Add Student', href: '/students', icon: UserPlus, color: 'bg-success' },
+    { label: 'Add Teacher', href: '/teachers', icon: Users, color: 'bg-info' },
+    { label: 'Add Course', href: '/courses', icon: BookOpen, color: 'bg-primary' },
+    { label: 'Enrollments', href: '/enrollments', icon: ClipboardList, color: 'bg-accent' },
+  ], []);
 
   if (loading) {
     return (
-      <div className="space-y-4 sm:space-y-6">
-        <Skeleton className="h-10 sm:h-12 w-48 sm:w-64" />
-        <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
-          {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-28 sm:h-32" />)}
+      <div className="space-y-6">
+        <Skeleton className="h-12 w-64" />
+        <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+          {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-32" />)}
         </div>
       </div>
     );
   }
 
-  const quickActions = [
-    { label: 'Add Student', href: '/students', icon: UserPlus, color: 'bg-success' },
-    { label: 'Add Teacher', href: '/teachers', icon: Users, color: 'bg-info' },
-    { label: 'Add Course', href: '/courses', icon: BookOpen, color: 'bg-primary' },
-    { label: 'Enrollments', href: '/enrollments', icon: ClipboardList, color: 'bg-accent' },
-  ];
-
-  const enrollmentData = [
-    { name: 'Students', value: stats.students, fill: 'hsl(var(--primary))' },
-    { name: 'Teachers', value: stats.teachers, fill: 'hsl(var(--info))' },
-    { name: 'Courses', value: stats.courses, fill: 'hsl(var(--warning))' },
-  ].filter(d => d.value > 0);
-
   return (
-    <div className="space-y-4 sm:space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in">
       <PageHeader title="Admin Dashboard" description="System overview and management">
-        <div className="flex items-center gap-2 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full bg-primary/10 text-primary text-xs sm:text-sm font-medium">
-          <Shield className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium">
+          <Shield className="h-4 w-4" />
           Full Access
         </div>
       </PageHeader>
 
       {/* Stats */}
-      <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
         <StatCard title="Students" value={stats.students} icon={GraduationCap} />
         <StatCard title="Teachers" value={stats.teachers} icon={Users} variant="info" />
         <StatCard title="Courses" value={stats.courses} icon={BookOpen} variant="warning" />
@@ -107,14 +114,12 @@ export default function AdminDashboard() {
 
       {/* Pending Actions */}
       {(pendingApprovals > 0 || pendingLeaves > 0 || overdueBooks > 0) && (
-        <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-3">
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
           {pendingApprovals > 0 && (
             <Link to="/admin/profile-approvals">
               <Card className="border-warning/30 bg-warning/5 hover:bg-warning/10 transition-colors cursor-pointer">
                 <CardContent className="flex items-center gap-3 p-4">
-                  <div className="p-2 rounded-lg bg-warning/20">
-                    <FileText className="h-5 w-5 text-warning" />
-                  </div>
+                  <div className="p-2 rounded-lg bg-warning/20"><FileText className="h-5 w-5 text-warning" /></div>
                   <div>
                     <p className="font-semibold text-sm">{pendingApprovals} Profile Approvals</p>
                     <p className="text-xs text-muted-foreground">Pending review</p>
@@ -126,9 +131,7 @@ export default function AdminDashboard() {
           {pendingLeaves > 0 && (
             <Card className="border-info/30 bg-info/5">
               <CardContent className="flex items-center gap-3 p-4">
-                <div className="p-2 rounded-lg bg-info/20">
-                  <ClipboardList className="h-5 w-5 text-info" />
-                </div>
+                <div className="p-2 rounded-lg bg-info/20"><ClipboardList className="h-5 w-5 text-info" /></div>
                 <div>
                   <p className="font-semibold text-sm">{pendingLeaves} Leave Requests</p>
                   <p className="text-xs text-muted-foreground">Awaiting approval</p>
@@ -140,9 +143,7 @@ export default function AdminDashboard() {
             <Link to="/admin/library">
               <Card className="border-destructive/30 bg-destructive/5 hover:bg-destructive/10 transition-colors cursor-pointer">
                 <CardContent className="flex items-center gap-3 p-4">
-                  <div className="p-2 rounded-lg bg-destructive/20">
-                    <AlertTriangle className="h-5 w-5 text-destructive" />
-                  </div>
+                  <div className="p-2 rounded-lg bg-destructive/20"><AlertTriangle className="h-5 w-5 text-destructive" /></div>
                   <div>
                     <p className="font-semibold text-sm">{overdueBooks} Overdue Books</p>
                     <p className="text-xs text-muted-foreground">Needs attention</p>
@@ -154,60 +155,38 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      <div className="grid gap-4 lg:grid-cols-3">
-        {/* Distribution Chart */}
-        {enrollmentData.length > 0 && (
-          <Card>
-            <CardHeader className="p-4 sm:p-6">
-              <CardTitle className="text-base">System Distribution</CardTitle>
-            </CardHeader>
-            <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">
-              <div className="h-[200px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie data={enrollmentData} cx="50%" cy="50%" innerRadius={45} outerRadius={75} paddingAngle={4} dataKey="value">
-                      {enrollmentData.map((entry, i) => (
-                        <Cell key={i} fill={entry.fill} />
-                      ))}
-                    </Pie>
-                    <RechartsTooltip />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-              <div className="flex justify-center gap-4 mt-2">
-                {enrollmentData.map((d, i) => (
-                  <div key={i} className="flex items-center gap-1.5 text-xs">
-                    <span className="h-2.5 w-2.5 rounded-full" style={{ background: d.fill }} />
-                    {d.name} ({d.value})
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Recent Activity */}
-        <Card className="lg:col-span-1">
+      <div className="grid gap-4 lg:grid-cols-2">
+        {/* Activity Log */}
+        <Card>
           <CardHeader className="p-4 sm:p-6">
             <CardTitle className="text-base flex items-center gap-2">
-              <Bell className="h-4 w-4 text-primary" />
-              Recent Activity
+              <Activity className="h-4 w-4 text-primary" />
+              Recent System Activity
             </CardTitle>
           </CardHeader>
           <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">
-            {recentActivity.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-4">No recent activity</p>
+            {auditEntries.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">No activity recorded yet</p>
             ) : (
-              <div className="space-y-3">
-                {recentActivity.map((a, i) => (
-                  <div key={i} className="flex items-start gap-3 text-sm">
-                    <div className="h-2 w-2 rounded-full bg-primary mt-1.5 flex-shrink-0" />
-                    <div>
-                      <p className="text-foreground">{a.label}</p>
-                      <p className="text-xs text-muted-foreground">{a.time}</p>
+              <div className="space-y-2.5 max-h-[320px] overflow-y-auto">
+                {auditEntries.map((entry) => {
+                  const info = ACTION_LABELS[entry.action] ?? { label: entry.action, color: 'bg-muted text-muted-foreground' };
+                  return (
+                    <div key={entry.id} className="flex items-start gap-3 text-sm py-1.5">
+                      <Badge variant="outline" className={`text-[10px] px-1.5 py-0.5 shrink-0 ${info.color}`}>
+                        {info.label}
+                      </Badge>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-muted-foreground truncate">
+                          {entry.entity_type}{entry.entity_id ? ` · ${entry.entity_id}` : ''}
+                        </p>
+                      </div>
+                      <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+                        {format(new Date(entry.created_at), 'MMM d, h:mm a')}
+                      </span>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </CardContent>

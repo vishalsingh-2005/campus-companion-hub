@@ -6,6 +6,7 @@ import { NotificationsDropdown } from './NotificationsDropdown';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePreferences } from '@/contexts/PreferencesContext';
+import { useSessionTimeout } from '@/hooks/useSessionTimeout';
 import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -16,6 +17,7 @@ interface DashboardLayoutProps {
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const { user, loading } = useAuth();
   const { preferences } = usePreferences();
+  useSessionTimeout();
 
   if (loading) {
     return (
