@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -18,16 +18,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      (_event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
       }
     );
 
-    // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
@@ -37,27 +35,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    return { error: error as Error | null };
-  };
+  const signIn = useCallback(async (email: string, password: string) => {
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
-  const signOut = async () => {
+    // Log login to audit_logs
+    if (!error && data.user) {
+      supabase.from('audit_logs').insert({
+        user_id: data.user.id,
+        action: 'login',
+        entity_type: 'auth',
+        details: { email },
+      } as any).then(() => {});
+    }
+
+    return { error: error as Error | null };
+  }, []);
+
+  const signOut = useCallback(async () => {
+    // Log logout before clearing state
+    if (user) {
+      try {
+        await supabase.from('audit_logs').insert({
+          user_id: user.id,
+          action: 'logout',
+          entity_type: 'auth',
+        } as any);
+      } catch (_) {}
+    }
+
     try {
-      // Clear local state first
       setUser(null);
       setSession(null);
-      
-      // Then attempt server signout (ignore errors if session already invalid)
       await supabase.auth.signOut();
     } catch (error) {
       console.error('Sign out error:', error);
-      // State is already cleared, so user is effectively logged out
     }
-  };
+  }, [user]);
 
   return (
     <AuthContext.Provider value={{ user, session, loading, signIn, signOut }}>

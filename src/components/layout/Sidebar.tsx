@@ -37,7 +37,10 @@ const adminNavigation: NavItem[] = [
   { name: 'Holidays', href: '/admin/holidays', icon: CalendarDays },
   { name: 'Messages', href: '/messages', icon: MessageSquare },
   { name: 'Reports', href: '/admin/reports', icon: BarChart3 },
+  { name: 'Proxy Monitoring', href: '/admin/proxy-monitoring', icon: Shield },
+  { name: 'Coding Analytics', href: '/admin/coding-analytics', icon: Code2 },
   { name: 'User Accounts', href: '/admin/users', icon: UserPlus },
+  { name: 'Documentation', href: '/admin/documentation', icon: FileText },
   { name: 'Settings', href: '/admin/settings', icon: Settings },
 ];
 
