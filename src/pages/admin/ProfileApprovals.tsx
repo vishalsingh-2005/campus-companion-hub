@@ -32,6 +32,11 @@ export default function ProfileApprovals() {
     father_name: "Father's Name", mother_name: "Mother's Name", guardian_contact: 'Guardian Contact',
     date_of_birth: 'Date of Birth', gender: 'Gender', address: 'Address', city: 'City',
     state: 'State', course: 'Course', semester: 'Semester', phone: 'Phone',
+    blood_group: 'Blood Group', section: 'Section', year: 'Year', admission_type: 'Admission Type',
+    father_occupation: "Father's Occupation", father_contact: "Father's Contact",
+    mother_occupation: "Mother's Occupation", mother_contact: "Mother's Contact",
+    guardian_name: 'Guardian Name', guardian_phone: 'Guardian Phone',
+    permanent_address: 'Permanent Address', current_address: 'Current Address', pin_code: 'PIN Code',
   };
 
   if (loading) return <div className="space-y-4"><Skeleton className="h-12 w-64" /><Skeleton className="h-64" /></div>;
