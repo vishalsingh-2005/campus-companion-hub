@@ -2078,6 +2078,47 @@ export type Database = {
           },
         ]
       }
+      student_documents: {
+        Row: {
+          created_at: string
+          document_type: string
+          file_name: string
+          file_url: string
+          id: string
+          student_id: string
+          updated_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          document_type: string
+          file_name: string
+          file_url: string
+          id?: string
+          student_id: string
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          document_type?: string
+          file_name?: string
+          file_url?: string
+          id?: string
+          student_id?: string
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_documents_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       student_fees: {
         Row: {
           academic_year: string | null
@@ -2143,75 +2184,114 @@ export type Database = {
       students: {
         Row: {
           address: string | null
+          admission_type: string | null
           avatar_url: string | null
+          blood_group: string | null
           city: string | null
           course: string | null
           created_at: string
+          current_address: string | null
           date_of_birth: string | null
           email: string
           enrollment_date: string
+          father_contact: string | null
           father_name: string | null
+          father_occupation: string | null
           first_name: string
           gender: string | null
           guardian_contact: string | null
+          guardian_name: string | null
+          guardian_phone: string | null
           id: string
           last_name: string
+          mother_contact: string | null
           mother_name: string | null
+          mother_occupation: string | null
+          permanent_address: string | null
           phone: string | null
+          pin_code: string | null
+          section: string | null
           semester: string | null
           state: string | null
           status: string
           student_id: string
           updated_at: string
           user_id: string | null
+          year: string | null
         }
         Insert: {
           address?: string | null
+          admission_type?: string | null
           avatar_url?: string | null
+          blood_group?: string | null
           city?: string | null
           course?: string | null
           created_at?: string
+          current_address?: string | null
           date_of_birth?: string | null
           email: string
           enrollment_date?: string
+          father_contact?: string | null
           father_name?: string | null
+          father_occupation?: string | null
           first_name: string
           gender?: string | null
           guardian_contact?: string | null
+          guardian_name?: string | null
+          guardian_phone?: string | null
           id?: string
           last_name: string
+          mother_contact?: string | null
           mother_name?: string | null
+          mother_occupation?: string | null
+          permanent_address?: string | null
           phone?: string | null
+          pin_code?: string | null
+          section?: string | null
           semester?: string | null
           state?: string | null
           status?: string
           student_id: string
           updated_at?: string
           user_id?: string | null
+          year?: string | null
         }
         Update: {
           address?: string | null
+          admission_type?: string | null
           avatar_url?: string | null
+          blood_group?: string | null
           city?: string | null
           course?: string | null
           created_at?: string
+          current_address?: string | null
           date_of_birth?: string | null
           email?: string
           enrollment_date?: string
+          father_contact?: string | null
           father_name?: string | null
+          father_occupation?: string | null
           first_name?: string
           gender?: string | null
           guardian_contact?: string | null
+          guardian_name?: string | null
+          guardian_phone?: string | null
           id?: string
           last_name?: string
+          mother_contact?: string | null
           mother_name?: string | null
+          mother_occupation?: string | null
+          permanent_address?: string | null
           phone?: string | null
+          pin_code?: string | null
+          section?: string | null
           semester?: string | null
           state?: string | null
           status?: string
           student_id?: string
           updated_at?: string
           user_id?: string | null
+          year?: string | null
         }
         Relationships: []
       }

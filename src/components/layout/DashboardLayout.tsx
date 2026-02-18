@@ -4,6 +4,7 @@ import { Sidebar } from './Sidebar';
 import { ProfileDropdown } from './ProfileDropdown';
 import { NotificationsDropdown } from './NotificationsDropdown';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
+import { SmartAssistant } from '@/components/assistant/SmartAssistant';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePreferences } from '@/contexts/PreferencesContext';
 import { useSessionTimeout } from '@/hooks/useSessionTimeout';
@@ -65,6 +66,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           {children}
         </div>
       </main>
+
+      <SmartAssistant />
     </div>
   );
 }
