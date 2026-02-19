@@ -85,11 +85,36 @@ export default function StudentProfile() {
     async function fetchData() {
       if (!user) return;
       try {
-        const { data: student } = await supabase.from('students').select('*').eq('user_id', user.id).maybeSingle();
+        let { data: student } = await supabase.from('students').select('*').eq('user_id', user.id).maybeSingle();
+
+        // Auto-provision student record if none exists
+        if (!student) {
+          const fullName = user.user_metadata?.full_name || user.email?.split('@')[0] || '';
+          const nameParts = fullName.trim().split(/\s+/);
+          const firstName = nameParts[0] || 'Student';
+          const lastName = nameParts.slice(1).join(' ') || '';
+          const studentId = `STU-${Date.now().toString(36).toUpperCase()}`;
+
+          const { data: newStudent, error: insertError } = await supabase.from('students').insert({
+            user_id: user.id,
+            student_id: studentId,
+            first_name: firstName,
+            last_name: lastName,
+            email: user.email || '',
+            status: 'active',
+            enrollment_date: new Date().toISOString().split('T')[0],
+          }).select('*').single();
+
+          if (insertError) {
+            console.error('Error creating student profile:', insertError);
+          } else {
+            student = newStudent;
+          }
+        }
+
         setStudentData(student as any);
 
         if (student) {
-          // Academic summary
           const [resultRes, attRes, enrollRes] = await Promise.all([
             supabase.from('semester_results').select('cgpa').eq('student_id', (student as any).id).order('created_at', { ascending: false }).limit(1),
             supabase.from('attendance').select('status').eq('student_id', (student as any).id),
