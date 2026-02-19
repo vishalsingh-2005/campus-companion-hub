@@ -157,14 +157,14 @@ const App = () => (
 
                     {/* ═══ Teacher routes ═══ */}
                     <Route path="/teacher/dashboard" element={<ProtectedRoute allowedRoles={['teacher']}><DashboardLayout><TeacherDashboard /></DashboardLayout></ProtectedRoute>} />
-                    <Route path="/teacher/profile" element={<ProtectedRoute allowedRoles={['teacher']}><TeacherProfile /></ProtectedRoute>} />
-                    <Route path="/teacher/tests" element={<ProtectedRoute allowedRoles={['teacher']}><TeacherTests /></ProtectedRoute>} />
-                    <Route path="/teacher/tests/:testId/analytics" element={<ProtectedRoute allowedRoles={['teacher']}><TestAnalytics /></ProtectedRoute>} />
+                    <Route path="/teacher/profile" element={<ProtectedRoute allowedRoles={['teacher']}><DashboardLayout><TeacherProfile /></DashboardLayout></ProtectedRoute>} />
+                    <Route path="/teacher/tests" element={<ProtectedRoute allowedRoles={['teacher']}><DashboardLayout><TeacherTests /></DashboardLayout></ProtectedRoute>} />
+                    <Route path="/teacher/tests/:testId/analytics" element={<ProtectedRoute allowedRoles={['teacher']}><DashboardLayout><TestAnalytics /></DashboardLayout></ProtectedRoute>} />
                     <Route path="/teacher/holidays" element={<ProtectedRoute allowedRoles={['teacher']}><TeacherHolidays /></ProtectedRoute>} />
-                    <Route path="/teacher/coding-labs" element={<ProtectedRoute allowedRoles={['teacher']}><TeacherCodingLabs /></ProtectedRoute>} />
-                    <Route path="/teacher/settings" element={<ProtectedRoute allowedRoles={['teacher']}><SettingsPage /></ProtectedRoute>} />
-                    <Route path="/teacher/assignments" element={<ProtectedRoute allowedRoles={['teacher']}><TeacherAssignments /></ProtectedRoute>} />
-                    <Route path="/teacher/leave" element={<ProtectedRoute allowedRoles={['teacher']}><TeacherLeave /></ProtectedRoute>} />
+                    <Route path="/teacher/coding-labs" element={<ProtectedRoute allowedRoles={['teacher']}><DashboardLayout><TeacherCodingLabs /></DashboardLayout></ProtectedRoute>} />
+                    <Route path="/teacher/settings" element={<ProtectedRoute allowedRoles={['teacher']}><DashboardLayout><SettingsPage /></DashboardLayout></ProtectedRoute>} />
+                    <Route path="/teacher/assignments" element={<ProtectedRoute allowedRoles={['teacher']}><DashboardLayout><TeacherAssignments /></DashboardLayout></ProtectedRoute>} />
+                    <Route path="/teacher/leave" element={<ProtectedRoute allowedRoles={['teacher']}><DashboardLayout><TeacherLeave /></DashboardLayout></ProtectedRoute>} />
                     <Route path="/teacher/marks" element={<ProtectedRoute allowedRoles={['teacher']}><TeacherMarks /></ProtectedRoute>} />
 
                     {/* ═══ Student routes ═══ */}
@@ -172,21 +172,21 @@ const App = () => (
                     <Route path="/student/courses" element={<ProtectedRoute allowedRoles={['student']}><StudentCourses /></ProtectedRoute>} />
                     <Route path="/student/attendance" element={<ProtectedRoute allowedRoles={['student']}><MyAttendance /></ProtectedRoute>} />
                     <Route path="/student/schedule" element={<ProtectedRoute allowedRoles={['student']}><StudentSchedule /></ProtectedRoute>} />
-                    <Route path="/student/profile" element={<ProtectedRoute allowedRoles={['student']}><StudentProfile /></ProtectedRoute>} />
-                    <Route path="/student/settings" element={<ProtectedRoute allowedRoles={['student']}><SettingsPage /></ProtectedRoute>} />
-                    <Route path="/student/notices" element={<ProtectedRoute allowedRoles={['student']}><StudentNotices /></ProtectedRoute>} />
-                    <Route path="/student/mark-attendance" element={<ProtectedRoute allowedRoles={['student']}><MarkAttendance /></ProtectedRoute>} />
-                    <Route path="/student/syllabus" element={<ProtectedRoute allowedRoles={['student']}><StudentSyllabus /></ProtectedRoute>} />
-                    <Route path="/student/tests" element={<ProtectedRoute allowedRoles={['student']}><StudentTests /></ProtectedRoute>} />
-                    <Route path="/student/take-test/:testId" element={<ProtectedRoute allowedRoles={['student']}><TakeTest /></ProtectedRoute>} />
-                    <Route path="/student/coding-labs" element={<ProtectedRoute allowedRoles={['student']}><CodingLabs /></ProtectedRoute>} />
-                    <Route path="/student/coding-lab/:labId" element={<ProtectedRoute allowedRoles={['student']}><CodingLabEditor /></ProtectedRoute>} />
+                    <Route path="/student/profile" element={<ProtectedRoute allowedRoles={['student']}><DashboardLayout><StudentProfile /></DashboardLayout></ProtectedRoute>} />
+                    <Route path="/student/settings" element={<ProtectedRoute allowedRoles={['student']}><DashboardLayout><StudentSettings /></DashboardLayout></ProtectedRoute>} />
+                    <Route path="/student/notices" element={<ProtectedRoute allowedRoles={['student']}><DashboardLayout><StudentNotices /></DashboardLayout></ProtectedRoute>} />
+                    <Route path="/student/mark-attendance" element={<ProtectedRoute allowedRoles={['student']}><DashboardLayout><MarkAttendance /></DashboardLayout></ProtectedRoute>} />
+                    <Route path="/student/syllabus" element={<ProtectedRoute allowedRoles={['student']}><DashboardLayout><StudentSyllabus /></DashboardLayout></ProtectedRoute>} />
+                    <Route path="/student/tests" element={<ProtectedRoute allowedRoles={['student']}><DashboardLayout><StudentTests /></DashboardLayout></ProtectedRoute>} />
+                    <Route path="/student/take-test/:testId" element={<ProtectedRoute allowedRoles={['student']}><DashboardLayout><TakeTest /></DashboardLayout></ProtectedRoute>} />
+                    <Route path="/student/coding-labs" element={<ProtectedRoute allowedRoles={['student']}><DashboardLayout><CodingLabs /></DashboardLayout></ProtectedRoute>} />
+                    <Route path="/student/coding-lab/:labId" element={<ProtectedRoute allowedRoles={['student']}><DashboardLayout><CodingLabEditor /></DashboardLayout></ProtectedRoute>} />
                     <Route path="/student/events" element={<ProtectedRoute allowedRoles={['student']}><StudentEvents /></ProtectedRoute>} />
                     <Route path="/student/holidays" element={<ProtectedRoute allowedRoles={['student']}><StudentHolidays /></ProtectedRoute>} />
-                    <Route path="/student/fees" element={<ProtectedRoute allowedRoles={['student']}><StudentFees /></ProtectedRoute>} />
-                    <Route path="/student/library" element={<ProtectedRoute allowedRoles={['student']}><StudentLibrary /></ProtectedRoute>} />
-                    <Route path="/student/assignments" element={<ProtectedRoute allowedRoles={['student']}><StudentAssignments /></ProtectedRoute>} />
-                    <Route path="/student/leave" element={<ProtectedRoute allowedRoles={['student']}><StudentLeave /></ProtectedRoute>} />
+                    <Route path="/student/fees" element={<ProtectedRoute allowedRoles={['student']}><DashboardLayout><StudentFees /></DashboardLayout></ProtectedRoute>} />
+                    <Route path="/student/library" element={<ProtectedRoute allowedRoles={['student']}><DashboardLayout><StudentLibrary /></DashboardLayout></ProtectedRoute>} />
+                    <Route path="/student/assignments" element={<ProtectedRoute allowedRoles={['student']}><DashboardLayout><StudentAssignments /></DashboardLayout></ProtectedRoute>} />
+                    <Route path="/student/leave" element={<ProtectedRoute allowedRoles={['student']}><DashboardLayout><StudentLeave /></DashboardLayout></ProtectedRoute>} />
                     <Route path="/student/marks" element={<ProtectedRoute allowedRoles={['student']}><StudentMarks /></ProtectedRoute>} />
 
                     {/* ═══ Organizer routes ═══ */}
@@ -195,7 +195,7 @@ const App = () => (
                     <Route path="/organizer/attendance" element={<ProtectedRoute allowedRoles={['event_organizer']}><EventAttendance /></ProtectedRoute>} />
                     <Route path="/organizer/announcements" element={<ProtectedRoute allowedRoles={['event_organizer']}><EventAnnouncements /></ProtectedRoute>} />
                     <Route path="/organizer/analytics" element={<ProtectedRoute allowedRoles={['event_organizer']}><EventAnalytics /></ProtectedRoute>} />
-                    <Route path="/organizer/settings" element={<ProtectedRoute allowedRoles={['event_organizer']}><SettingsPage /></ProtectedRoute>} />
+                    <Route path="/organizer/settings" element={<ProtectedRoute allowedRoles={['event_organizer']}><DashboardLayout><SettingsPage /></DashboardLayout></ProtectedRoute>} />
 
                     {/* Fallback */}
                     <Route path="*" element={<NotFound />} />
