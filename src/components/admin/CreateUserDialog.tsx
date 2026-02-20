@@ -23,9 +23,12 @@ import { toast } from 'sonner';
 import { z } from 'zod';
 
 const createUserSchema = z.object({
-  email: z.string().email('Invalid email address'),
+  email: z.string()
+    .trim()
+    .email('Invalid email address')
+    .regex(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/, 'Please enter a valid email address'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
-  fullName: z.string().min(2, 'Name must be at least 2 characters'),
+  fullName: z.string().trim().min(2, 'Name must be at least 2 characters').max(100, 'Name is too long'),
   role: z.enum(['admin', 'teacher', 'student', 'event_organizer'], { required_error: 'Please select a role' }),
 });
 

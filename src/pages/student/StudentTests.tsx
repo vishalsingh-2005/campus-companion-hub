@@ -139,8 +139,10 @@ export default function StudentTests() {
     fetchData();
   }, [user]);
 
-  // Calculate stats
-  const upcomingTests = tests.filter(t => isFuture(new Date(t.scheduled_date)) && t.status === 'scheduled');
+  // Calculate stats - show scheduled/active tests regardless of date
+  const availableTests = tests.filter(t => t.status === 'scheduled' || t.status === 'active');
+  const upcomingTests = availableTests.filter(t => isFuture(new Date(t.scheduled_date)));
+  const activeNowTests = availableTests.filter(t => t.status === 'active' || (t.status === 'scheduled' && !isFuture(new Date(t.scheduled_date))));
   const completedTests = results.filter(r => r.status === 'graded');
   const pendingResults = results.filter(r => r.status === 'pending' || r.status === 'submitted');
   
@@ -224,20 +226,20 @@ export default function StudentTests() {
         />
       </div>
 
-      <Tabs defaultValue="upcoming" className="space-y-6">
+      <Tabs defaultValue="available" className="space-y-6">
         <TabsList>
-          <TabsTrigger value="upcoming" className="flex items-center gap-2">
-            <Calendar className="h-4 w-4" />
-            Upcoming ({upcomingTests.length})
+          <TabsTrigger value="available" className="flex items-center gap-2">
+            <ClipboardCheck className="h-4 w-4" />
+            Available ({availableTests.length})
           </TabsTrigger>
           <TabsTrigger value="results" className="flex items-center gap-2">
-            <ClipboardCheck className="h-4 w-4" />
+            <Trophy className="h-4 w-4" />
             Results ({completedTests.length})
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="upcoming" className="space-y-4">
-          {upcomingTests.length === 0 ? (
+        <TabsContent value="available" className="space-y-4">
+          {availableTests.length === 0 ? (
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12">
                 <Calendar className="h-16 w-16 text-muted-foreground mb-4" />
@@ -249,7 +251,7 @@ export default function StudentTests() {
             </Card>
           ) : (
             <div className="grid gap-4">
-              {upcomingTests.map((test) => {
+              {availableTests.map((test) => {
                 const status = getStatusBadge(test);
                 return (
                   <Card key={test.id} className="hover:shadow-md transition-shadow">
@@ -297,13 +299,13 @@ export default function StudentTests() {
                             <Target className="h-4 w-4" />
                             <span>{test.total_marks} marks • {test.duration_minutes} min</span>
                           </div>
-                          {test.status === 'active' && (
+                          {(test.status === 'active' || test.status === 'scheduled') && (
                             <Button
                               size="sm"
                               className="mt-3"
                               onClick={() => navigate(`/student/take-test/${test.id}`)}
                             >
-                              Take Test
+                              {test.status === 'active' ? 'Take Test' : 'View Details'}
                             </Button>
                           )}
                         </div>

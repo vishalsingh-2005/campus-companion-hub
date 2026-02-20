@@ -15,6 +15,7 @@ import { Loader2 } from 'lucide-react';
 // Eagerly loaded (small, critical path)
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 import AccessDenied from "./pages/AccessDenied";
 import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
@@ -121,6 +122,7 @@ const App = () => (
                     <Route path="/" element={<Index />} />
                     <Route path="/auth" element={<Auth />} />
                     <Route path="/access-denied" element={<AccessDenied />} />
+                    <Route path="/reset-password" element={<ResetPassword />} />
 
                     {/* Role-based dashboard redirect */}
                     <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />

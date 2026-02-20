@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Loader2, Mail, Lock, ArrowRight, GraduationCap, Shield, BookOpen, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import { z } from 'zod';
+import { ForgotPasswordDialog } from '@/components/auth/ForgotPasswordDialog';
 import './Auth.css';
 
 const loginSchema = z.object({
@@ -26,6 +27,7 @@ export default function Auth() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
 
   if (loading) {
     return (
@@ -183,11 +185,26 @@ export default function Auth() {
             </Button>
           </form>
 
-          <p className="text-center text-xs text-muted-foreground mt-8">
+          <div className="text-center mt-4">
+            <button
+              type="button"
+              onClick={() => setForgotPasswordOpen(true)}
+              className="text-sm text-primary hover:underline"
+            >
+              Forgot Password?
+            </button>
+          </div>
+
+          <p className="text-center text-xs text-muted-foreground mt-6">
             Contact your administrator for account access
           </p>
         </div>
       </div>
+
+      <ForgotPasswordDialog
+        open={forgotPasswordOpen}
+        onOpenChange={setForgotPasswordOpen}
+      />
     </div>
   );
 }
