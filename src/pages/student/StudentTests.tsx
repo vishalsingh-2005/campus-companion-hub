@@ -139,10 +139,10 @@ export default function StudentTests() {
     fetchData();
   }, [user]);
 
-  // Calculate stats - show scheduled/active tests regardless of date
-  const availableTests = tests.filter(t => t.status === 'scheduled' || t.status === 'active');
+  // Calculate stats - show scheduled/active/live tests regardless of date
+  const availableTests = tests.filter(t => ['scheduled', 'active', 'live'].includes(t.status));
   const upcomingTests = availableTests.filter(t => isFuture(new Date(t.scheduled_date)));
-  const activeNowTests = availableTests.filter(t => t.status === 'active' || (t.status === 'scheduled' && !isFuture(new Date(t.scheduled_date))));
+  const activeNowTests = availableTests.filter(t => ['active', 'live'].includes(t.status) || (t.status === 'scheduled' && !isFuture(new Date(t.scheduled_date))));
   const completedTests = results.filter(r => r.status === 'graded');
   const pendingResults = results.filter(r => r.status === 'pending' || r.status === 'submitted');
   
@@ -171,6 +171,7 @@ export default function StudentTests() {
     const date = new Date(test.scheduled_date);
     if (test.status === 'cancelled') return { label: 'Cancelled', class: 'bg-destructive/10 text-destructive' };
     if (test.status === 'completed') return { label: 'Completed', class: 'bg-success/10 text-success' };
+    if (test.status === 'live' || test.status === 'active') return { label: 'Live Now', class: 'bg-warning/10 text-warning' };
     if (isToday(date)) return { label: 'Today', class: 'bg-warning/10 text-warning' };
     if (isFuture(date)) return { label: 'Upcoming', class: 'bg-primary/10 text-primary' };
     return { label: 'Past', class: 'bg-muted text-muted-foreground' };
@@ -299,13 +300,13 @@ export default function StudentTests() {
                             <Target className="h-4 w-4" />
                             <span>{test.total_marks} marks • {test.duration_minutes} min</span>
                           </div>
-                          {(test.status === 'active' || test.status === 'scheduled') && (
+                          {['active', 'live', 'scheduled'].includes(test.status) && (
                             <Button
                               size="sm"
                               className="mt-3"
                               onClick={() => navigate(`/student/take-test/${test.id}`)}
                             >
-                              {test.status === 'active' ? 'Take Test' : 'View Details'}
+                              {test.status === 'active' || test.status === 'live' ? 'Take Test' : 'View Details'}
                             </Button>
                           )}
                         </div>

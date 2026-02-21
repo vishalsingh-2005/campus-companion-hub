@@ -106,10 +106,18 @@ export default function AdminDashboard() {
 
       {/* Stats */}
       <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
-        <StatCard title="Students" value={stats.students} icon={GraduationCap} />
-        <StatCard title="Teachers" value={stats.teachers} icon={Users} variant="info" />
-        <StatCard title="Courses" value={stats.courses} icon={BookOpen} variant="warning" />
-        <StatCard title="Enrollments" value={stats.enrollments} icon={ClipboardList} variant="success" />
+        <Link to="/students">
+          <StatCard title="Students" value={stats.students} icon={GraduationCap} />
+        </Link>
+        <Link to="/teachers">
+          <StatCard title="Teachers" value={stats.teachers} icon={Users} variant="info" />
+        </Link>
+        <Link to="/courses">
+          <StatCard title="Courses" value={stats.courses} icon={BookOpen} variant="warning" />
+        </Link>
+        <Link to="/enrollments">
+          <StatCard title="Enrollments" value={stats.enrollments} icon={ClipboardList} variant="success" />
+        </Link>
       </div>
 
       {/* Pending Actions */}

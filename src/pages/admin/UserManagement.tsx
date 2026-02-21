@@ -25,9 +25,12 @@ import {
   KeyRound,
   Loader2,
   Calendar,
+  UserX,
+  UserCheck,
 } from 'lucide-react';
 import { useUserRole } from '@/hooks/useUserRole';
 import { Navigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
@@ -37,6 +40,7 @@ interface UserWithRole {
   role: string;
   name?: string;
   created_at: string;
+  is_active: boolean;
 }
 
 export default function UserManagement() {
@@ -73,7 +77,13 @@ export default function UserManagement() {
         .from('user_roles')
         .select('user_id, role');
 
+      // Fetch profiles to get is_active status
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('user_id, is_active');
+
       const rolesMap = new Map(roles?.map(r => [r.user_id, r.role]) || []);
+      const activeMap = new Map(profiles?.map(p => [p.user_id, p.is_active !== false]) || []);
 
       const allUsers: UserWithRole[] = [];
 
@@ -86,6 +96,7 @@ export default function UserManagement() {
             role: rolesMap.get(t.user_id) || 'teacher',
             name: `${t.first_name} ${t.last_name}`,
             created_at: t.created_at,
+            is_active: activeMap.get(t.user_id) ?? true,
           });
         }
       });
@@ -99,6 +110,7 @@ export default function UserManagement() {
             role: rolesMap.get(s.user_id) || 'student',
             name: `${s.first_name} ${s.last_name}`,
             created_at: s.created_at,
+            is_active: activeMap.get(s.user_id) ?? true,
           });
         }
       });
@@ -106,12 +118,12 @@ export default function UserManagement() {
       // Add any users with roles that aren't in teachers/students (like admins)
       roles?.forEach(r => {
         if (!allUsers.find(u => u.id === r.user_id)) {
-          // This is likely an admin or user without a profile
           allUsers.push({
             id: r.user_id,
             email: 'Unknown',
             role: r.role,
             created_at: new Date().toISOString(),
+            is_active: activeMap.get(r.user_id) ?? true,
           });
         }
       });
@@ -150,6 +162,24 @@ export default function UserManagement() {
       name: user.name,
     });
     setResetPasswordDialogOpen(true);
+  };
+
+  const handleToggleActive = async (targetUser: UserWithRole) => {
+    const newStatus = !targetUser.is_active;
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ is_active: newStatus })
+        .eq('user_id', targetUser.id);
+
+      if (error) throw error;
+
+      toast.success(newStatus ? 'User account activated' : 'User account deactivated');
+      fetchUsers();
+    } catch (error) {
+      console.error('Error toggling user status:', error);
+      toast.error('Failed to update user status');
+    }
   };
 
   const filteredUsers = users.filter(user => 
@@ -238,27 +268,44 @@ export default function UserManagement() {
                       <TableHead>Name</TableHead>
                       <TableHead>Email</TableHead>
                       <TableHead>Role</TableHead>
+                      <TableHead>Status</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filteredUsers.map((user) => (
-                      <TableRow key={user.id}>
+                      <TableRow key={user.id} className={!user.is_active ? 'opacity-60' : ''}>
                         <TableCell className="font-medium">
                           {user.name || '-'}
                         </TableCell>
                         <TableCell>{user.email}</TableCell>
                         <TableCell>{getRoleBadge(user.role)}</TableCell>
-                        <TableCell className="text-right">
+                        <TableCell>
+                          <Badge className={user.is_active ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'}>
+                            {user.is_active ? 'Active' : 'Deactivated'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right space-x-1">
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => handleResetPassword(user)}
-                            className="gap-2"
+                            className="gap-1"
                           >
                             <KeyRound className="h-4 w-4" />
-                            Reset Password
+                            Reset
                           </Button>
+                          {user.role !== 'admin' && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleToggleActive(user)}
+                              className={user.is_active ? 'gap-1 text-destructive hover:text-destructive' : 'gap-1 text-success hover:text-success'}
+                            >
+                              {user.is_active ? <UserX className="h-4 w-4" /> : <UserCheck className="h-4 w-4" />}
+                              {user.is_active ? 'Deactivate' : 'Activate'}
+                            </Button>
+                          )}
                         </TableCell>
                       </TableRow>
                     ))}

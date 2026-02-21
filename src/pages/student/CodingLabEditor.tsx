@@ -229,16 +229,20 @@ export default function CodingLabEditor() {
         },
       });
 
-      if (response.error) throw response.error;
+      if (response.error) {
+        // Try to extract meaningful error from response data
+        const errorMsg = response.data?.error || response.error?.message || 'Failed to execute code';
+        throw new Error(errorMsg);
+      }
 
       const result = response.data;
-      if (result.success) {
+      if (result?.success) {
         setRunOutput(result.output || '(no output)');
         if (result.error) {
           setRunError(result.error);
         }
       } else {
-        setRunError(result.error || 'Execution failed');
+        setRunError(result?.error || 'Execution failed');
       }
     } catch (error) {
       console.error('Run error:', error);
@@ -266,7 +270,10 @@ export default function CodingLabEditor() {
         },
       });
 
-      if (response.error) throw response.error;
+      if (response.error) {
+        const errorMsg = response.data?.error || response.error?.message || 'Submission failed';
+        throw new Error(errorMsg);
+      }
 
       const result = response.data;
       if (result.success) {
