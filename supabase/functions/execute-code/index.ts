@@ -92,32 +92,45 @@ async function executeWithJudge0(
   const JUDGE0_API_KEY = Deno.env.get('JUDGE0_API_KEY');
   const JUDGE0_URL = 'https://judge0-ce.p.rapidapi.com';
   
+  if (!JUDGE0_API_KEY) {
+    throw new Error('Code execution service is not configured. Please contact the administrator.');
+  }
+
   const languageId = LANGUAGE_IDS[language];
   if (!languageId) {
     throw new Error(`Unsupported language: ${language}`);
   }
 
   // Create submission
-  const createResponse = await fetch(`${JUDGE0_URL}/submissions?base64_encoded=true&wait=true`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-RapidAPI-Key': JUDGE0_API_KEY!,
-      'X-RapidAPI-Host': 'judge0-ce.p.rapidapi.com',
-    },
-    body: JSON.stringify({
-      source_code: btoa(sourceCode),
-      language_id: languageId,
-      stdin: btoa(input),
-      cpu_time_limit: timeLimit,
-      memory_limit: memoryLimit * 1024, // Convert MB to KB
-    }),
-  });
+  let createResponse: Response;
+  try {
+    createResponse = await fetch(`${JUDGE0_URL}/submissions?base64_encoded=true&wait=true`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-RapidAPI-Key': JUDGE0_API_KEY,
+        'X-RapidAPI-Host': 'judge0-ce.p.rapidapi.com',
+      },
+      body: JSON.stringify({
+        source_code: btoa(sourceCode),
+        language_id: languageId,
+        stdin: btoa(input),
+        cpu_time_limit: timeLimit,
+        memory_limit: memoryLimit * 1024, // Convert MB to KB
+      }),
+    });
+  } catch (fetchErr) {
+    console.error('Judge0 fetch error:', fetchErr);
+    throw new Error('Failed to connect to code execution service. Please try again later.');
+  }
 
   if (!createResponse.ok) {
     const errorText = await createResponse.text();
-    console.error('Judge0 error:', errorText);
-    throw new Error('Failed to execute code with Judge0');
+    console.error('Judge0 error:', createResponse.status, errorText);
+    if (createResponse.status === 429) {
+      throw new Error('Too many submissions. Please wait a moment and try again.');
+    }
+    throw new Error('Code execution service returned an error. Please try again.');
   }
 
   const result = await createResponse.json();
@@ -126,7 +139,7 @@ async function executeWithJudge0(
     stdout: result.stdout ? atob(result.stdout) : null,
     stderr: result.stderr ? atob(result.stderr) : null,
     compile_output: result.compile_output ? atob(result.compile_output) : null,
-    status: result.status,
+    status: result.status || { id: 0, description: 'Unknown' },
     time: result.time,
     memory: result.memory,
   };
