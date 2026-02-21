@@ -1,9 +1,8 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { jwtVerify } from 'https://deno.land/x/jose@v4.14.4/index.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
 // Judge0 language IDs
@@ -50,30 +49,7 @@ interface ExecuteRequest {
   submissionId?: string;
 }
 
-async function verifyToken(token: string): Promise<string | null> {
-  try {
-    const JWKS_URL = `${Deno.env.get('SUPABASE_URL')}/auth/v1/.well-known/jwks.json`;
-    const response = await fetch(JWKS_URL);
-    const jwks = await response.json();
-    
-    const key = await crypto.subtle.importKey(
-      'jwk',
-      jwks.keys[0],
-      { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
-      true,
-      ['verify']
-    );
-
-    const { payload } = await jwtVerify(token, key, {
-      audience: 'authenticated',
-    });
-
-    return payload.sub as string;
-  } catch (error) {
-    console.error('Token verification failed:', error);
-    return null;
-  }
-}
+// Removed manual RSA verifyToken - using getClaims() instead
 
 async function executeWithJudge0(
   sourceCode: string,
@@ -160,18 +136,29 @@ Deno.serve(async (req) => {
     }
 
     const token = authHeader.replace('Bearer ', '');
-    const userId = await verifyToken(token);
-    
-    if (!userId) {
+
+    // Use anon key client with user's token for getClaims
+    const authClient = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_ANON_KEY')!,
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const { data: claimsData, error: claimsError } = await authClient.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims) {
+      console.error('Token verification failed:', claimsError);
       return new Response(
         JSON.stringify({ error: 'Invalid token' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
+    const userId = claimsData.claims.sub as string;
+
     const body: ExecuteRequest = await req.json();
     const { mode, labId, language, sourceCode, customInput, submissionId } = body;
 
+    // Service role client for DB operations
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
