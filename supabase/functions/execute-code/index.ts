@@ -7,37 +7,10 @@ const corsHeaders = {
 
 // Judge0 language IDs
 const LANGUAGE_IDS: Record<string, number> = {
-  c: 50,      // C (GCC 9.2.0)
-  cpp: 54,    // C++ (GCC 9.2.0)
-  java: 62,   // Java (OpenJDK 13.0.1)
-  python: 71, // Python (3.8.1)
-};
-
-// Default template code
-const TEMPLATE_CODE: Record<string, string> = {
-  c: `#include <stdio.h>
-
-int main() {
-    // Your code here
-    return 0;
-}`,
-  cpp: `#include <iostream>
-using namespace std;
-
-int main() {
-    // Your code here
-    return 0;
-}`,
-  java: `import java.util.Scanner;
-
-public class Main {
-    public static void main(String[] args) {
-        Scanner sc = new Scanner(System.in);
-        // Your code here
-    }
-}`,
-  python: `# Your code here
-`,
+  c: 50,
+  cpp: 54,
+  java: 62,
+  python: 71,
 };
 
 interface ExecuteRequest {
@@ -46,10 +19,33 @@ interface ExecuteRequest {
   language: string;
   sourceCode: string;
   customInput?: string;
-  submissionId?: string;
 }
 
-// Removed manual RSA verifyToken - using getClaims() instead
+interface Judge0Result {
+  stdout: string | null;
+  stderr: string | null;
+  compile_output: string | null;
+  status: { id: number; description: string };
+  time: string | null;
+  memory: number | null;
+}
+
+function normalizeOutput(s: string | null): string {
+  if (!s) return '';
+  return s.replace(/\r\n/g, '\n').trim();
+}
+
+function mapJudge0Status(statusId: number): string {
+  const map: Record<number, string> = {
+    1: 'pending', 2: 'running', 3: 'accepted',
+    4: 'wrong_answer', 5: 'time_limit',
+    6: 'compile_error',
+    7: 'runtime_error', 8: 'runtime_error', 9: 'runtime_error',
+    10: 'runtime_error', 11: 'runtime_error', 12: 'runtime_error',
+    13: 'runtime_error', 14: 'runtime_error',
+  };
+  return map[statusId] || 'runtime_error';
+}
 
 async function executeWithJudge0(
   sourceCode: string,
@@ -57,19 +53,12 @@ async function executeWithJudge0(
   input: string,
   timeLimit: number,
   memoryLimit: number
-): Promise<{
-  stdout: string | null;
-  stderr: string | null;
-  compile_output: string | null;
-  status: { id: number; description: string };
-  time: string | null;
-  memory: number | null;
-}> {
+): Promise<Judge0Result> {
   const JUDGE0_API_KEY = Deno.env.get('JUDGE0_API_KEY');
   const JUDGE0_URL = 'https://judge0-ce.p.rapidapi.com';
-  
+
   if (!JUDGE0_API_KEY) {
-    throw new Error('Code execution service is not configured. Please contact the administrator.');
+    throw new Error('Code execution service is not configured.');
   }
 
   const languageId = LANGUAGE_IDS[language];
@@ -77,7 +66,6 @@ async function executeWithJudge0(
     throw new Error(`Unsupported language: ${language}`);
   }
 
-  // Create submission
   let createResponse: Response;
   try {
     createResponse = await fetch(`${JUDGE0_URL}/submissions?base64_encoded=true&wait=true`, {
@@ -88,16 +76,16 @@ async function executeWithJudge0(
         'X-RapidAPI-Host': 'judge0-ce.p.rapidapi.com',
       },
       body: JSON.stringify({
-        source_code: btoa(sourceCode),
+        source_code: btoa(unescape(encodeURIComponent(sourceCode))),
         language_id: languageId,
-        stdin: btoa(input),
+        stdin: btoa(unescape(encodeURIComponent(input))),
         cpu_time_limit: timeLimit,
-        memory_limit: memoryLimit * 1024, // Convert MB to KB
+        memory_limit: memoryLimit * 1024,
       }),
     });
   } catch (fetchErr) {
     console.error('Judge0 fetch error:', fetchErr);
-    throw new Error('Failed to connect to code execution service. Please try again later.');
+    throw new Error('Failed to connect to code execution service.');
   }
 
   if (!createResponse.ok) {
@@ -106,15 +94,23 @@ async function executeWithJudge0(
     if (createResponse.status === 429) {
       throw new Error('Too many submissions. Please wait a moment and try again.');
     }
-    throw new Error('Code execution service returned an error. Please try again.');
+    if (createResponse.status === 403) {
+      throw new Error('Code execution service subscription issue. Please contact admin.');
+    }
+    throw new Error('Code execution service error. Please try again.');
   }
 
   const result = await createResponse.json();
 
+  const decodeB64 = (s: string | null | undefined): string | null => {
+    if (!s) return null;
+    try { return decodeURIComponent(escape(atob(s))); } catch { return atob(s); }
+  };
+
   return {
-    stdout: result.stdout ? atob(result.stdout) : null,
-    stderr: result.stderr ? atob(result.stderr) : null,
-    compile_output: result.compile_output ? atob(result.compile_output) : null,
+    stdout: decodeB64(result.stdout),
+    stderr: decodeB64(result.stderr),
+    compile_output: decodeB64(result.compile_output),
     status: result.status || { id: 0, description: 'Unknown' },
     time: result.time,
     memory: result.memory,
@@ -137,7 +133,6 @@ Deno.serve(async (req) => {
 
     const token = authHeader.replace('Bearer ', '');
 
-    // Use anon key client with user's token for getClaims
     const authClient = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_ANON_KEY')!,
@@ -155,10 +150,33 @@ Deno.serve(async (req) => {
 
     const userId = claimsData.claims.sub as string;
 
-    const body: ExecuteRequest = await req.json();
-    const { mode, labId, language, sourceCode, customInput, submissionId } = body;
+    let body: ExecuteRequest;
+    try {
+      body = await req.json();
+    } catch {
+      return new Response(
+        JSON.stringify({ error: 'Invalid request body' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
-    // Service role client for DB operations
+    const { mode, labId, language, sourceCode, customInput } = body;
+
+    // Validate required fields
+    if (!language || !sourceCode?.trim()) {
+      return new Response(
+        JSON.stringify({ error: 'Language and source code are required' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (!LANGUAGE_IDS[language]) {
+      return new Response(
+        JSON.stringify({ error: `Unsupported language: ${language}` }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -167,53 +185,63 @@ Deno.serve(async (req) => {
     // Get time/memory limits from lab if provided
     let timeLimit = 2;
     let memoryLimit = 256;
-    
+
     if (labId) {
       const { data: lab } = await supabase
         .from('coding_labs')
         .select('time_limit_seconds, memory_limit_mb')
         .eq('id', labId)
         .single();
-      
       if (lab) {
         timeLimit = lab.time_limit_seconds;
         memoryLimit = lab.memory_limit_mb;
       }
     }
 
+    // ============ RUN MODE ============
     if (mode === 'run') {
-      // Simple run with custom input
-      const result = await executeWithJudge0(
-        sourceCode,
-        language,
-        customInput || '',
-        timeLimit,
-        memoryLimit
-      );
+      let result: Judge0Result;
+      try {
+        result = await executeWithJudge0(
+          sourceCode, language, customInput || '', timeLimit, memoryLimit
+        );
+      } catch (execErr) {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: execErr instanceof Error ? execErr.message : 'Execution failed',
+          }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
 
-      // Log activity
-      await supabase.from('coding_lab_activity_logs').insert({
+      // Log activity (non-blocking)
+      supabase.from('coding_lab_activity_logs').insert({
         lab_id: labId || null,
         user_id: userId,
         action: 'run',
         details: { language, status: result.status.description },
-      });
+      }).then(() => {});
+
+      const statusName = mapJudge0Status(result.status.id);
+      const hasError = result.stderr || result.compile_output;
 
       return new Response(
         JSON.stringify({
-          success: true,
-          output: result.stdout,
-          error: result.stderr || result.compile_output,
-          status: result.status.description,
+          success: result.status.id === 3 || result.status.id <= 2 || !!result.stdout,
+          output: result.stdout || '',
+          error: result.compile_output || result.stderr || null,
+          status: statusName,
+          statusDescription: result.status.description,
           executionTime: result.time,
           memoryUsed: result.memory,
         }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
+    // ============ SUBMIT MODE ============
     if (mode === 'submit' && labId) {
-      // Get student ID
       const { data: student } = await supabase
         .from('students')
         .select('id')
@@ -227,7 +255,6 @@ Deno.serve(async (req) => {
         );
       }
 
-      // Get all test cases for this lab
       const { data: testCases } = await supabase
         .from('coding_lab_test_cases')
         .select('*')
@@ -236,7 +263,7 @@ Deno.serve(async (req) => {
 
       if (!testCases || testCases.length === 0) {
         return new Response(
-          JSON.stringify({ error: 'No test cases found' }),
+          JSON.stringify({ error: 'No test cases found for this lab' }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
@@ -256,110 +283,99 @@ Deno.serve(async (req) => {
         .single();
 
       if (submissionError) {
-        throw submissionError;
+        console.error('Submission insert error:', submissionError);
+        return new Response(
+          JSON.stringify({ error: 'Failed to create submission record' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
       }
 
-      // Run against all test cases
       const testResults = [];
       let passedCount = 0;
       let totalWeight = 0;
       let earnedWeight = 0;
       let worstStatus = 'accepted';
-      let lastTime = 0;
-      let lastMemory = 0;
+      let maxTime = 0;
+      let maxMemory = 0;
 
       for (const testCase of testCases) {
         totalWeight += testCase.weight;
-        
+
         try {
           const result = await executeWithJudge0(
-            sourceCode,
-            language,
-            testCase.input,
-            timeLimit,
-            memoryLimit
+            sourceCode, language, testCase.input, timeLimit, memoryLimit
           );
 
-          const actualOutput = (result.stdout || '').trim();
-          const expectedOutput = testCase.expected_output.trim();
-          const passed = actualOutput === expectedOutput && result.status.id === 3; // 3 = Accepted
+          const actualOutput = normalizeOutput(result.stdout);
+          const expectedOutput = normalizeOutput(testCase.expected_output);
+
+          // Determine pass: status must be Accepted (3) AND outputs match
+          let passed = false;
+          if (result.status.id === 3) {
+            // Normalize: trim each line, compare line by line
+            const actualLines = actualOutput.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+            const expectedLines = expectedOutput.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+
+            if (actualLines.length === expectedLines.length) {
+              passed = actualLines.every((line, i) => line === expectedLines[i]);
+            }
+          }
 
           if (passed) {
             passedCount++;
             earnedWeight += testCase.weight;
           }
 
-          if (result.time) {
-            lastTime = Math.max(lastTime, parseFloat(result.time) * 1000);
-          }
-          if (result.memory) {
-            lastMemory = Math.max(lastMemory, result.memory);
-          }
+          if (result.time) maxTime = Math.max(maxTime, parseFloat(result.time) * 1000);
+          if (result.memory) maxMemory = Math.max(maxMemory, result.memory);
 
-          // Map status
-          const statusMap: Record<number, string> = {
-            1: 'pending',
-            2: 'running',
-            3: 'accepted',
-            4: 'wrong_answer',
-            5: 'time_limit',
-            6: 'compile_error',
-            7: 'runtime_error',
-            8: 'runtime_error',
-            9: 'runtime_error',
-            10: 'runtime_error',
-            11: 'runtime_error',
-            12: 'runtime_error',
-            13: 'runtime_error',
-            14: 'runtime_error',
-          };
+          const testStatus = passed ? 'passed' : mapJudge0Status(result.status.id);
+          // If not passed and status was 'accepted' from Judge0, it's a wrong answer
+          const finalTestStatus = !passed && result.status.id === 3 ? 'wrong_answer' : testStatus;
 
-          const testStatus = passed ? 'passed' : (statusMap[result.status.id] || 'wrong_answer');
-          
           if (!passed && worstStatus === 'accepted') {
-            worstStatus = testStatus;
+            worstStatus = finalTestStatus === 'passed' ? 'wrong_answer' : finalTestStatus;
           }
 
           testResults.push({
             testCaseId: testCase.id,
             isSample: testCase.is_sample,
             passed,
-            status: testStatus,
+            status: passed ? 'passed' : finalTestStatus,
             executionTime: result.time,
             memoryUsed: result.memory,
-            // Only include output for sample test cases
             ...(testCase.is_sample ? {
               input: testCase.input,
               expectedOutput: testCase.expected_output,
-              actualOutput,
+              actualOutput: result.stdout || '',
+            } : {}),
+            ...((result.compile_output || result.stderr) && testCase.is_sample ? {
+              error: result.compile_output || result.stderr,
             } : {}),
           });
         } catch (err) {
+          const errMsg = err instanceof Error ? err.message : 'Execution error';
           testResults.push({
             testCaseId: testCase.id,
             isSample: testCase.is_sample,
             passed: false,
             status: 'runtime_error',
-            error: err instanceof Error ? err.message : 'Unknown error',
+            error: testCase.is_sample ? errMsg : undefined,
           });
-          
-          if (worstStatus === 'accepted') {
-            worstStatus = 'runtime_error';
-          }
+          if (worstStatus === 'accepted') worstStatus = 'runtime_error';
         }
       }
 
-      // Calculate score
       const score = totalWeight > 0 ? (earnedWeight / totalWeight) * 100 : 0;
       const finalStatus = passedCount === testCases.length ? 'accepted' : worstStatus;
 
-      // Update submission
+      // Update submission record
       await supabase
         .from('coding_lab_submissions')
         .update({
           status: finalStatus,
-          execution_time_ms: Math.round(lastTime),
-          memory_used_kb: lastMemory,
+          execution_time_ms: Math.round(maxTime),
+          memory_used_kb: maxMemory,
           test_results: testResults,
           passed_test_cases: passedCount,
           score,
@@ -367,19 +383,13 @@ Deno.serve(async (req) => {
         })
         .eq('id', submission.id);
 
-      // Log activity
-      await supabase.from('coding_lab_activity_logs').insert({
+      // Log activity (non-blocking)
+      supabase.from('coding_lab_activity_logs').insert({
         lab_id: labId,
         user_id: userId,
         action: 'submit',
-        details: {
-          language,
-          status: finalStatus,
-          passed: passedCount,
-          total: testCases.length,
-          score,
-        },
-      });
+        details: { language, status: finalStatus, passed: passedCount, total: testCases.length, score },
+      }).then(() => {});
 
       return new Response(
         JSON.stringify({
@@ -389,23 +399,26 @@ Deno.serve(async (req) => {
           passedTestCases: passedCount,
           totalTestCases: testCases.length,
           score,
-          testResults: testResults.filter(t => t.isSample), // Only return sample results
-          executionTime: lastTime,
-          memoryUsed: lastMemory,
+          testResults: testResults.filter(t => t.isSample),
+          executionTime: maxTime,
+          memoryUsed: maxMemory,
         }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     return new Response(
-      JSON.stringify({ error: 'Invalid request' }),
+      JSON.stringify({ error: 'Invalid request mode' }),
       { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
-    console.error('Error:', error);
+    console.error('Unhandled error:', error);
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : 'Internal server error' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({
+        success: false,
+        error: error instanceof Error ? error.message : 'Internal server error',
+      }),
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });
