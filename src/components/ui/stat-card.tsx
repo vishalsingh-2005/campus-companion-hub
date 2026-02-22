@@ -1,3 +1,4 @@
+import React from 'react';
 import { cn } from '@/lib/utils';
 import { LucideIcon } from 'lucide-react';
 import { useAnimatedCounter } from '@/hooks/useAnimatedCounter';
@@ -47,7 +48,7 @@ const variantStyles: Record<StatVariant, { icon: string; glow: string; ring: str
   },
 };
 
-export function StatCard({
+export const StatCard = React.forwardRef<HTMLDivElement, StatCardProps>(function StatCard({
   title,
   value,
   subtitle,
@@ -57,13 +58,13 @@ export function StatCard({
   variant = 'default',
   className,
   iconClassName,
-}: StatCardProps) {
+}, ref) {
   const styles = variantStyles[variant];
   const numericValue = typeof value === 'number' ? value : null;
   const animatedValue = useAnimatedCounter(numericValue ?? 0);
 
   return (
-    <div className={cn(
+    <div ref={ref} className={cn(
       'stat-card group ring-1 ring-transparent transition-all duration-500',
       styles.glow,
       styles.ring,
@@ -100,4 +101,4 @@ export function StatCard({
       </div>
     </div>
   );
-}
+});
