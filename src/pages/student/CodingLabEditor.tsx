@@ -449,26 +449,27 @@ export default function CodingLabEditor() {
                       size="sm"
                       onClick={handleRun}
                       disabled={isRunning || isSubmitting}
+                      className="btn-interact gap-2 border-primary/30 hover:border-primary hover:bg-primary/5 hover:text-primary hover:shadow-[0_0_12px_hsl(252_85%_60%/0.2)] transition-all duration-300"
                     >
                       {isRunning ? (
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        <Loader2 className="h-4 w-4 animate-spin" />
                       ) : (
-                        <Play className="h-4 w-4 mr-2" />
+                        <Play className="h-4 w-4" />
                       )}
-                      Run
+                      {isRunning ? 'Running…' : 'Run'}
                     </Button>
                     <Button
                       size="sm"
                       onClick={handleSubmit}
                       disabled={isRunning || isSubmitting}
-                      className="bg-success hover:bg-success/90 text-success-foreground"
+                      className="btn-interact gap-2 bg-success hover:bg-success/90 text-success-foreground hover:shadow-[0_0_16px_hsl(152_69%_40%/0.3)] transition-all duration-300"
                     >
                       {isSubmitting ? (
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        <Loader2 className="h-4 w-4 animate-spin" />
                       ) : (
-                        <Send className="h-4 w-4 mr-2" />
+                        <Send className="h-4 w-4" />
                       )}
-                      Submit
+                      {isSubmitting ? 'Submitting…' : 'Submit'}
                     </Button>
                   </div>
                 </div>

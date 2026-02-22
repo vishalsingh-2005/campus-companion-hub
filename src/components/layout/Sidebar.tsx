@@ -186,10 +186,10 @@ export function Sidebar() {
         to={item.href}
         onClick={() => setMobileMenuOpen(false)}
         className={cn(
-          'flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-300 relative group/link active:scale-[0.98]',
+          'flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-300 relative group/link active:scale-[0.97]',
           isActive
-            ? 'bg-sidebar-primary text-sidebar-primary-foreground shadow-glow'
-            : 'text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/50'
+            ? 'bg-sidebar-primary/90 text-sidebar-primary-foreground shadow-glow backdrop-blur-sm'
+            : 'text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/50 hover:translate-x-0.5'
         )}
       >
         <item.icon className={cn('h-4.5 w-4.5 transition-transform duration-300 flex-shrink-0', isActive && 'scale-110')} />
