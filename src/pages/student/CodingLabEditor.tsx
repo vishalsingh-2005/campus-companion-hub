@@ -23,6 +23,7 @@ import {
   XCircle,
   Loader2,
   AlertTriangle,
+  ArrowLeft,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -66,6 +67,16 @@ const DEFAULT_CODE: Record<string, string> = {
   cpp: '#include <iostream>\nusing namespace std;\n\nint main() {\n    // Your code here\n    return 0;\n}',
   java: 'import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // Your code here\n    }\n}',
   python: '# Your code here\n',
+};
+
+const STATUS_CONFIG: Record<string, { cls: string; icon: any; label: string }> = {
+  accepted: { cls: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30', icon: CheckCircle2, label: 'Accepted' },
+  passed: { cls: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30', icon: CheckCircle2, label: 'Passed' },
+  wrong_answer: { cls: 'bg-red-500/15 text-red-400 border-red-500/30', icon: XCircle, label: 'Wrong Answer' },
+  time_limit: { cls: 'bg-amber-500/15 text-amber-400 border-amber-500/30', icon: Clock, label: 'Time Limit' },
+  runtime_error: { cls: 'bg-orange-500/15 text-orange-400 border-orange-500/30', icon: AlertTriangle, label: 'Runtime Error' },
+  compile_error: { cls: 'bg-red-500/15 text-red-400 border-red-500/30', icon: XCircle, label: 'Compile Error' },
+  running: { cls: 'bg-blue-500/15 text-blue-400 border-blue-500/30', icon: Loader2, label: 'Running' },
 };
 
 export default function CodingLabEditor() {
@@ -117,19 +128,14 @@ export default function CodingLabEditor() {
         setTestCases((testCasesData || []) as TestCase[]);
 
         const { data: student } = await supabase
-          .from('students')
-          .select('id')
-          .eq('user_id', user.id)
-          .maybeSingle();
+          .from('students').select('id').eq('user_id', user.id).maybeSingle();
 
         if (student) {
           const { data: submissionsData } = await supabase
             .from('coding_lab_submissions')
             .select('id, language, status, score, passed_test_cases, total_test_cases, execution_time_ms, submitted_at')
-            .eq('lab_id', labId)
-            .eq('student_id', student.id)
-            .order('submitted_at', { ascending: false })
-            .limit(10);
+            .eq('lab_id', labId).eq('student_id', student.id)
+            .order('submitted_at', { ascending: false }).limit(10);
 
           setSubmissions((submissionsData || []) as Submission[]);
         }
@@ -172,7 +178,8 @@ export default function CodingLabEditor() {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        toast({ title: 'Not Authenticated', description: 'Please log in again.', variant: 'destructive' });
+        toast({ title: 'Session Expired', description: 'Please log in again.', variant: 'destructive' });
+        setIsRunning(false);
         return;
       }
 
@@ -186,8 +193,6 @@ export default function CodingLabEditor() {
         },
       });
 
-      // supabase.functions.invoke returns { data, error }
-      // Our edge function now always returns 200 with { success, output, error, status }
       const result = response.data;
 
       if (response.error && !result) {
@@ -196,19 +201,14 @@ export default function CodingLabEditor() {
 
       if (result) {
         setRunStatus(result.status || undefined);
-        if (result.output) {
-          setRunOutput(result.output);
-        }
-        if (result.error) {
-          setRunError(result.error);
-        }
-        if (!result.output && !result.error) {
-          setRunOutput('(no output)');
-        }
+        setRunOutput(result.output || '');
+        if (result.error) setRunError(result.error);
+        if (!result.output && !result.error) setRunOutput('(no output)');
       }
     } catch (error) {
       console.error('Run error:', error);
       setRunError(error instanceof Error ? error.message : 'Failed to run code. Please try again.');
+      setRunStatus('runtime_error');
     } finally {
       setIsRunning(false);
     }
@@ -231,17 +231,13 @@ export default function CodingLabEditor() {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        toast({ title: 'Not Authenticated', description: 'Please log in again.', variant: 'destructive' });
+        toast({ title: 'Session Expired', description: 'Please log in again.', variant: 'destructive' });
+        setIsSubmitting(false);
         return;
       }
 
       const response = await supabase.functions.invoke('execute-code', {
-        body: {
-          mode: 'submit',
-          labId,
-          language,
-          sourceCode: code,
-        },
+        body: { mode: 'submit', labId, language, sourceCode: code },
       });
 
       const result = response.data;
@@ -259,19 +255,14 @@ export default function CodingLabEditor() {
 
         // Refresh submissions
         const { data: student } = await supabase
-          .from('students')
-          .select('id')
-          .eq('user_id', user!.id)
-          .maybeSingle();
+          .from('students').select('id').eq('user_id', user!.id).maybeSingle();
 
         if (student) {
           const { data: submissionsData } = await supabase
             .from('coding_lab_submissions')
             .select('id, language, status, score, passed_test_cases, total_test_cases, execution_time_ms, submitted_at')
-            .eq('lab_id', labId)
-            .eq('student_id', student.id)
-            .order('submitted_at', { ascending: false })
-            .limit(10);
+            .eq('lab_id', labId).eq('student_id', student.id)
+            .order('submitted_at', { ascending: false }).limit(10);
 
           setSubmissions((submissionsData || []) as Submission[]);
         }
@@ -301,20 +292,11 @@ export default function CodingLabEditor() {
   };
 
   const getStatusBadge = (status: string) => {
-    const variants: Record<string, { class: string; icon: any; label: string }> = {
-      accepted: { class: 'bg-success/10 text-success', icon: CheckCircle2, label: 'Accepted' },
-      passed: { class: 'bg-success/10 text-success', icon: CheckCircle2, label: 'Passed' },
-      wrong_answer: { class: 'bg-destructive/10 text-destructive', icon: XCircle, label: 'Wrong Answer' },
-      time_limit: { class: 'bg-warning/10 text-warning', icon: Clock, label: 'Time Limit' },
-      runtime_error: { class: 'bg-destructive/10 text-destructive', icon: AlertTriangle, label: 'Runtime Error' },
-      compile_error: { class: 'bg-destructive/10 text-destructive', icon: XCircle, label: 'Compile Error' },
-      running: { class: 'bg-primary/10 text-primary', icon: Loader2, label: 'Running' },
-    };
-    const v = variants[status] || { class: 'bg-muted text-muted-foreground', icon: Clock, label: status };
+    const v = STATUS_CONFIG[status] || { cls: 'bg-muted text-muted-foreground', icon: Clock, label: status };
     const Icon = v.icon;
     return (
-      <Badge className={v.class}>
-        <Icon className="h-3 w-3 mr-1" />
+      <Badge className={cn('border', v.cls)}>
+        <Icon className={cn('h-3 w-3 mr-1', status === 'running' && 'animate-spin')} />
         {v.label}
       </Badge>
     );
@@ -323,45 +305,48 @@ export default function CodingLabEditor() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <span className="text-sm text-muted-foreground">Loading lab...</span>
+        </div>
       </div>
     );
   }
 
   if (!lab) return null;
 
+  const difficultyColor = {
+    easy: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
+    medium: 'bg-amber-500/15 text-amber-400 border-amber-500/30',
+    hard: 'bg-red-500/15 text-red-400 border-red-500/30',
+  }[lab.difficulty] || 'bg-muted text-muted-foreground';
+
   return (
     <div className="h-[calc(100vh-4rem)] flex flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b bg-card flex-wrap gap-2">
-        <div className="flex items-center gap-4 flex-wrap">
-          <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
-            ← Back
+      <div className="flex items-center justify-between px-4 py-2.5 border-b bg-card/80 backdrop-blur-sm flex-wrap gap-2">
+        <div className="flex items-center gap-3 flex-wrap">
+          <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="gap-1.5 text-muted-foreground hover:text-foreground">
+            <ArrowLeft className="h-4 w-4" />
+            Back
           </Button>
+          <div className="h-6 w-px bg-border" />
           <div>
-            <h1 className="font-semibold">{lab.title}</h1>
+            <h1 className="font-semibold text-sm">{lab.title}</h1>
             {lab.courses && (
-              <span className="text-sm text-muted-foreground">{lab.courses.course_name}</span>
+              <span className="text-xs text-muted-foreground">{lab.courses.course_name}</span>
             )}
           </div>
-          <Badge
-            className={cn(
-              lab.difficulty === 'easy' && 'bg-success/10 text-success',
-              lab.difficulty === 'medium' && 'bg-warning/10 text-warning',
-              lab.difficulty === 'hard' && 'bg-destructive/10 text-destructive'
-            )}
-          >
-            {lab.difficulty}
-          </Badge>
+          <Badge className={cn('border text-xs', difficultyColor)}>{lab.difficulty}</Badge>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1 text-sm text-muted-foreground">
-            <Clock className="h-4 w-4" />
-            {lab.time_limit_seconds}s
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <Clock className="h-3.5 w-3.5" />
+            <span>{lab.time_limit_seconds}s</span>
           </div>
-          <div className="flex items-center gap-1 text-sm text-muted-foreground">
-            <Cpu className="h-4 w-4" />
-            {lab.memory_limit_mb}MB
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <Cpu className="h-3.5 w-3.5" />
+            <span>{lab.memory_limit_mb}MB</span>
           </div>
         </div>
       </div>
@@ -372,15 +357,15 @@ export default function CodingLabEditor() {
         <ResizablePanel defaultSize={35} minSize={20}>
           <Tabs defaultValue="problem" className="h-full flex flex-col">
             <div className="border-b px-4 py-2">
-              <TabsList>
-                <TabsTrigger value="problem">Problem</TabsTrigger>
-                <TabsTrigger value="submissions">History ({submissions.length})</TabsTrigger>
+              <TabsList className="bg-muted/50">
+                <TabsTrigger value="problem" className="text-xs">Problem</TabsTrigger>
+                <TabsTrigger value="submissions" className="text-xs">History ({submissions.length})</TabsTrigger>
               </TabsList>
             </div>
 
             <TabsContent value="problem" className="flex-1 mt-0 overflow-hidden">
               <ScrollArea className="h-full p-4">
-                <div className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap">
+                <div className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap leading-relaxed">
                   {lab.description}
                 </div>
               </ScrollArea>
@@ -389,28 +374,31 @@ export default function CodingLabEditor() {
             <TabsContent value="submissions" className="flex-1 mt-0 overflow-hidden">
               <ScrollArea className="h-full p-4">
                 {submissions.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">No submissions yet</div>
+                  <div className="text-center py-8 text-muted-foreground text-sm">
+                    <Send className="h-8 w-8 mx-auto mb-2 opacity-30" />
+                    No submissions yet
+                  </div>
                 ) : (
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     {submissions.map((sub) => (
-                      <Card key={sub.id} className="p-3">
+                      <Card key={sub.id} className="p-3 bg-muted/30 border-border/50 hover:bg-muted/50 transition-colors">
                         <div className="flex items-center justify-between">
                           {getStatusBadge(sub.status)}
-                          <span className="text-sm text-muted-foreground">
+                          <span className="text-xs text-muted-foreground">
                             {format(new Date(sub.submitted_at), 'MMM d, h:mm a')}
                           </span>
                         </div>
-                        <div className="flex items-center gap-4 mt-2 text-sm flex-wrap">
-                          <span>
+                        <div className="flex items-center gap-3 mt-2 text-xs flex-wrap">
+                          <span className="text-muted-foreground">
                             {sub.passed_test_cases ?? 0}/{sub.total_test_cases ?? 0} passed
                           </span>
-                          <span className="font-medium">
-                            Score: {(sub.score ?? 0).toFixed(0)}%
+                          <span className="font-medium text-foreground">
+                            {(sub.score ?? 0).toFixed(0)}%
                           </span>
                           {sub.execution_time_ms != null && (
                             <span className="text-muted-foreground">{sub.execution_time_ms}ms</span>
                           )}
-                          <Badge variant="outline" className="text-xs">
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0">
                             {sub.language.toUpperCase()}
                           </Badge>
                         </div>
@@ -431,15 +419,15 @@ export default function CodingLabEditor() {
             <ResizablePanel defaultSize={60} minSize={30}>
               <div className="h-full flex flex-col">
                 {/* Editor toolbar */}
-                <div className="flex items-center justify-between px-4 py-2 border-b bg-muted/30 flex-wrap gap-2">
-                  <div className="flex items-center gap-3">
+                <div className="flex items-center justify-between px-3 py-1.5 border-b bg-muted/20 flex-wrap gap-2">
+                  <div className="flex items-center gap-2">
                     <LanguageSelector
                       value={language}
                       onChange={handleLanguageChange}
                       allowedLanguages={lab.allowed_languages}
                     />
-                    <Button variant="ghost" size="sm" onClick={handleReset} title="Reset code">
-                      <RotateCcw className="h-4 w-4" />
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleReset} title="Reset code">
+                      <RotateCcw className="h-3.5 w-3.5" />
                     </Button>
                   </div>
 
@@ -449,26 +437,28 @@ export default function CodingLabEditor() {
                       size="sm"
                       onClick={handleRun}
                       disabled={isRunning || isSubmitting}
-                      className="btn-interact gap-2 border-primary/30 hover:border-primary hover:bg-primary/5 hover:text-primary hover:shadow-[0_0_12px_hsl(252_85%_60%/0.2)] transition-all duration-300"
-                    >
-                      {isRunning ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Play className="h-4 w-4" />
+                      className={cn(
+                        "gap-1.5 h-8 px-4 font-medium transition-all duration-300",
+                        "border-emerald-500/30 text-emerald-400",
+                        "hover:bg-emerald-500/10 hover:border-emerald-500/50 hover:shadow-[0_0_12px_hsl(152_69%_40%/0.15)]",
+                        isRunning && "border-emerald-500/50 bg-emerald-500/10"
                       )}
+                    >
+                      {isRunning ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
                       {isRunning ? 'Running…' : 'Run'}
                     </Button>
                     <Button
                       size="sm"
                       onClick={handleSubmit}
                       disabled={isRunning || isSubmitting}
-                      className="btn-interact gap-2 bg-success hover:bg-success/90 text-success-foreground hover:shadow-[0_0_16px_hsl(152_69%_40%/0.3)] transition-all duration-300"
-                    >
-                      {isSubmitting ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Send className="h-4 w-4" />
+                      className={cn(
+                        "gap-1.5 h-8 px-4 font-medium transition-all duration-300",
+                        "bg-primary hover:bg-primary/90",
+                        "hover:shadow-[0_0_16px_hsl(var(--primary)/0.3)]",
+                        isSubmitting && "opacity-80"
                       )}
+                    >
+                      {isSubmitting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
                       {isSubmitting ? 'Submitting…' : 'Submit'}
                     </Button>
                   </div>
