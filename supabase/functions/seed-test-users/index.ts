@@ -3,41 +3,38 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
 };
+
+function jsonResponse(body: Record<string, unknown>, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
+function generatePassword(): string {
+  // 24-char URL-safe random password (never returned to caller)
+  const arr = new Uint8Array(18);
+  crypto.getRandomValues(arr);
+  return btoa(String.fromCharCode(...arr))
+    .replace(/\+/g, "A")
+    .replace(/\//g, "B")
+    .replace(/=/g, "");
+}
 
 interface TestUser {
   email: string;
-  password: string;
   full_name: string;
   role: "admin" | "teacher" | "student" | "event_organizer";
 }
 
 const testUsers: TestUser[] = [
-  {
-    email: "admin@college.edu",
-    password: "Admin@123",
-    full_name: "System Administrator",
-    role: "admin",
-  },
-  {
-    email: "teacher@college.edu",
-    password: "Teacher@123",
-    full_name: "John Smith",
-    role: "teacher",
-  },
-  {
-    email: "student@college.edu",
-    password: "Student@123",
-    full_name: "Jane Doe",
-    role: "student",
-  },
-  {
-    email: "organizer@college.edu",
-    password: "Organizer@123",
-    full_name: "Mike Johnson",
-    role: "event_organizer",
-  },
+  { email: "admin@college.edu", full_name: "System Administrator", role: "admin" },
+  { email: "teacher@college.edu", full_name: "John Smith", role: "teacher" },
+  { email: "student@college.edu", full_name: "Jane Doe", role: "student" },
+  { email: "organizer@college.edu", full_name: "Mike Johnson", role: "event_organizer" },
 ];
 
 serve(async (req: Request): Promise<Response> => {
@@ -48,12 +45,46 @@ serve(async (req: Request): Promise<Response> => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+    // ---- AUTH GUARD: caller must be an authenticated admin ----
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return jsonResponse({ error: "Unauthorized" }, 401);
+    }
+    const accessToken = authHeader.slice("Bearer ".length);
+
+    const userClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
+      global: { headers: { Authorization: authHeader } },
+    });
+
+    const { data: userData, error: userErr } = await userClient.auth.getUser(accessToken);
+    if (userErr || !userData?.user) {
+      return jsonResponse({ error: "Unauthorized" }, 401);
+    }
+
     const adminClient = createClient(supabaseUrl, supabaseServiceKey);
+
+    const { data: roleRows, error: roleCheckErr } = await adminClient
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userData.user.id);
+
+    if (roleCheckErr) {
+      console.error("seed-test-users: role check failed", roleCheckErr);
+      return jsonResponse({ error: "Authorization check failed" }, 500);
+    }
+
+    const isAdmin = (roleRows ?? []).some((r) => r.role === "admin");
+    if (!isAdmin) {
+      return jsonResponse({ error: "Forbidden — admin role required" }, 403);
+    }
 
     const results: { email: string; status: string; error?: string }[] = [];
 
     for (const user of testUsers) {
       try {
+        const password = generatePassword();
+
         // Check if user already exists
         const { data: existingUsers } = await adminClient.auth.admin.listUsers();
         const existingUser = existingUsers?.users?.find(u => u.email === user.email);
@@ -66,7 +97,7 @@ serve(async (req: Request): Promise<Response> => {
         // Create the user
         const { data: newUser, error: createError } = await adminClient.auth.admin.createUser({
           email: user.email,
-          password: user.password,
+          password,
           email_confirm: true,
           user_metadata: { full_name: user.full_name },
         });
@@ -121,24 +152,16 @@ serve(async (req: Request): Promise<Response> => {
       }
     }
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        message: "Test users seeded",
-        results,
-        credentials: testUsers.map(u => ({
-          role: u.role,
-          email: u.email,
-          password: u.password,
-        })),
-      }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    // NEVER return passwords. Admin must use the password-reset flow to set
+    // a known password for any newly created seed account.
+    return jsonResponse({
+      success: true,
+      message:
+        "Test users seeded. Use the admin password-reset flow to set passwords for these accounts.",
+      results,
+    });
   } catch (error: any) {
     console.error("Error seeding users:", error);
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return jsonResponse({ error: error.message }, 500);
   }
 });
