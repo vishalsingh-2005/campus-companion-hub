@@ -8,6 +8,7 @@ import { Loader2, Mail, Lock, ArrowRight, GraduationCap, Shield, BookOpen, Users
 import { toast } from 'sonner';
 import { z } from 'zod';
 import { ForgotPasswordDialog } from '@/components/auth/ForgotPasswordDialog';
+import { supabase } from '@/integrations/supabase/client';
 import './Auth.css';
 
 const loginSchema = z.object({
@@ -65,6 +66,27 @@ export default function Auth() {
     if (!validateForm()) return;
     setIsSubmitting(true);
     try {
+      // Server-side validation (email format, required password, account status)
+      const { data: validation, error: validationError } = await supabase.functions.invoke(
+        'validate-admin-login',
+        { body: { email: formData.email, password: formData.password } },
+      );
+
+      if (validationError || !validation?.valid) {
+        const message =
+          (validation && typeof validation.error === 'string' && validation.error) ||
+          validationError?.message ||
+          'Validation failed. Please check your input.';
+        const field =
+          validation && typeof validation.field === 'string' ? validation.field : 'form';
+
+        if (field === 'email' || field === 'password') {
+          setErrors({ [field]: message });
+        }
+        toast.error(message);
+        return;
+      }
+
       const { error } = await signIn(formData.email, formData.password);
       if (error) {
         toast.error(error.message.includes('Invalid login credentials') ? 'Invalid email or password' : error.message);
