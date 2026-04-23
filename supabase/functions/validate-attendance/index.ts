@@ -148,17 +148,32 @@ serve(async (req) => {
       const now = Date.now();
       const rotationMs = (session.qr_rotation_interval_seconds || 30) * 1000;
       const currentWindow = Math.floor(now / rotationMs);
-      const newToken = await generateToken(session.qr_secret, currentWindow);
+
+      // Read the QR secret from the protected secrets table (service role bypasses RLS)
+      const { data: secretRow } = await serviceClient
+        .from('secure_attendance_session_secrets')
+        .select('qr_secret')
+        .eq('session_id', session_id)
+        .single();
+
+      if (!secretRow?.qr_secret) {
+        return new Response(
+          JSON.stringify({ error: 'Session secret missing', code: 'SECRET_MISSING' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const newToken = await generateToken(secretRow.qr_secret, currentWindow);
       const expiresAt = new Date((currentWindow + 1) * rotationMs);
 
-      // Update session with new token
+      // Update token in the secrets table (no longer stored on the public sessions table)
       await serviceClient
-        .from('secure_attendance_sessions')
+        .from('secure_attendance_session_secrets')
         .update({
           current_qr_token: newToken,
           current_qr_expires_at: expiresAt.toISOString(),
         })
-        .eq('id', session_id);
+        .eq('session_id', session_id);
 
       return new Response(
         JSON.stringify({
@@ -284,10 +299,24 @@ serve(async (req) => {
       const rotationMs = (session.qr_rotation_interval_seconds || 30) * 1000;
       const currentWindow = Math.floor(Date.now() / rotationMs);
       const prevWindow = currentWindow - 1;
-      
+
+      // Fetch QR secret from protected secrets table
+      const { data: markSecretRow } = await serviceClient
+        .from('secure_attendance_session_secrets')
+        .select('qr_secret')
+        .eq('session_id', session_id)
+        .single();
+
+      if (!markSecretRow?.qr_secret) {
+        return new Response(
+          JSON.stringify({ error: 'Session secret missing', code: 'SECRET_MISSING' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
       const validTokens = [
-        await generateToken(session.qr_secret, currentWindow),
-        await generateToken(session.qr_secret, prevWindow), // Allow previous window for latency
+        await generateToken(markSecretRow.qr_secret, currentWindow),
+        await generateToken(markSecretRow.qr_secret, prevWindow), // Allow previous window for latency
       ];
 
       if (!validTokens.includes(qr_token)) {
