@@ -20,3 +20,6 @@ verify_jwt = false
 
 [functions.seed-test-users]
 verify_jwt = false
+
+[functions.validate-admin-login]
+verify_jwt = false
