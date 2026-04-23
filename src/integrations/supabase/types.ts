@@ -1752,6 +1752,45 @@ export type Database = {
           },
         ]
       }
+      secure_attendance_session_secrets: {
+        Row: {
+          current_qr_expires_at: string | null
+          current_qr_token: string | null
+          qr_secret: string
+          session_id: string
+          updated_at: string
+        }
+        Insert: {
+          current_qr_expires_at?: string | null
+          current_qr_token?: string | null
+          qr_secret: string
+          session_id: string
+          updated_at?: string
+        }
+        Update: {
+          current_qr_expires_at?: string | null
+          current_qr_token?: string | null
+          qr_secret?: string
+          session_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "secure_attendance_session_secrets_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "secure_attendance_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "secure_attendance_session_secrets_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "secure_attendance_sessions_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       secure_attendance_sessions: {
         Row: {
           attendance_count: number
@@ -2050,6 +2089,13 @@ export type Database = {
             columns: ["question_id"]
             isOneToOne: false
             referencedRelation: "test_questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_answers_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "test_questions_safe"
             referencedColumns: ["id"]
           },
         ]
@@ -2736,11 +2782,94 @@ export type Database = {
           },
         ]
       }
+      test_questions_safe: {
+        Row: {
+          created_at: string | null
+          id: string | null
+          marks: number | null
+          options: Json | null
+          order_index: number | null
+          question_text: string | null
+          question_type: Database["public"]["Enums"]["question_type"] | null
+          test_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string | null
+          marks?: number | null
+          options?: Json | null
+          order_index?: number | null
+          question_text?: string | null
+          question_type?: Database["public"]["Enums"]["question_type"] | null
+          test_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string | null
+          marks?: number | null
+          options?: Json | null
+          order_index?: number | null
+          question_text?: string | null
+          question_type?: Database["public"]["Enums"]["question_type"] | null
+          test_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "test_questions_test_id_fkey"
+            columns: ["test_id"]
+            isOneToOne: false
+            referencedRelation: "tests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
+      get_student_attendance_sessions: {
+        Args: never
+        Returns: {
+          attendance_count: number
+          classroom_location_id: string
+          course_id: string
+          created_at: string
+          end_time: string
+          id: string
+          qr_rotation_interval_seconds: number
+          require_gps: boolean
+          require_selfie: boolean
+          session_date: string
+          start_time: string
+          status: string
+          teacher_id: string
+          time_window_minutes: number
+          updated_at: string
+        }[]
+      }
+      get_test_questions_for_student: {
+        Args: { _test_id: string }
+        Returns: {
+          id: string
+          marks: number
+          options: Json
+          order_index: number
+          question_text: string
+          question_type: Database["public"]["Enums"]["question_type"]
+          test_id: string
+        }[]
+      }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
+      }
+      grade_objective_answer: {
+        Args: { _answer: string; _question_id: string }
+        Returns: {
+          is_correct: boolean
+          marks_awarded: number
+        }[]
       }
       has_role: {
         Args: {
