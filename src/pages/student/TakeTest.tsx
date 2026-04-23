@@ -140,14 +140,11 @@ export default function TakeTest() {
 
         setTest(testData as unknown as Test);
 
-        // Fetch questions
+        // Fetch questions via secure RPC (correct_answer never leaves the server)
         const { data: questionsData } = await supabase
-          .from('test_questions')
-          .select('id, question_type, question_text, options, marks, order_index')
-          .eq('test_id', testId)
-          .order('order_index', { ascending: true });
+          .rpc('get_test_questions_for_student', { _test_id: testId });
 
-        setQuestions(questionsData as Question[] || []);
+        setQuestions((questionsData as unknown as Question[]) || []);
 
         // If existing attempt, resume
         if (existingAttempt) {
@@ -359,31 +356,23 @@ export default function TakeTest() {
     setSubmitting(true);
 
     try {
-      // Calculate score for MCQ and True/False
+      // Server-side grading for MCQ / True-False (correct answers never reach the client)
       let totalMarks = 0;
       for (const question of questions) {
         const answer = answers[question.id];
         if (!answer) continue;
 
-        const { data: questionData } = await supabase
-          .from('test_questions')
-          .select('correct_answer, marks')
-          .eq('id', question.id)
-          .single();
-
-        if (questionData) {
-          let isCorrect = false;
-          if (question.question_type === 'mcq' || question.question_type === 'true_false') {
-            isCorrect = answer === questionData.correct_answer;
-            if (isCorrect) totalMarks += questionData.marks;
-          }
+        if (question.question_type === 'mcq' || question.question_type === 'true_false') {
+          const { data: gradeRows } = await supabase
+            .rpc('grade_objective_answer', { _question_id: question.id, _answer: answer });
+          const grade = Array.isArray(gradeRows) ? gradeRows[0] : gradeRows;
+          const isCorrect = !!grade?.is_correct;
+          const awarded = grade?.marks_awarded ?? 0;
+          totalMarks += awarded;
 
           await supabase
             .from('student_answers')
-            .update({
-              is_correct: isCorrect,
-              marks_awarded: isCorrect ? questionData.marks : 0,
-            })
+            .update({ is_correct: isCorrect, marks_awarded: awarded })
             .eq('attempt_id', attempt.id)
             .eq('question_id', question.id);
         }
