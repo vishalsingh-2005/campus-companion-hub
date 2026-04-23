@@ -1752,6 +1752,45 @@ export type Database = {
           },
         ]
       }
+      secure_attendance_session_secrets: {
+        Row: {
+          current_qr_expires_at: string | null
+          current_qr_token: string | null
+          qr_secret: string
+          session_id: string
+          updated_at: string
+        }
+        Insert: {
+          current_qr_expires_at?: string | null
+          current_qr_token?: string | null
+          qr_secret: string
+          session_id: string
+          updated_at?: string
+        }
+        Update: {
+          current_qr_expires_at?: string | null
+          current_qr_token?: string | null
+          qr_secret?: string
+          session_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "secure_attendance_session_secrets_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "secure_attendance_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "secure_attendance_session_secrets_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "secure_attendance_sessions_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       secure_attendance_sessions: {
         Row: {
           attendance_count: number
